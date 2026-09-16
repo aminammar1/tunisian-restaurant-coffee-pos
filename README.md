@@ -2,7 +2,7 @@
 
 > A point-of-sale platform designed for Tunisian cafés and restaurants: fast order taking, simulated payment, kitchen-ready tickets, and real-time order visibility.
 
-![Tunisian café ambience](desktop-pos/assets/tunisian-cafe.jpg)
+
 
 ## Project snapshot
 
@@ -36,7 +36,7 @@ POS Tunisie gives an establishment one operational flow from catalog to receipt:
 | Real-time operations | Live order notifications over SSE |
 | API documentation | Interactive Swagger/OpenAPI documentation |
 
-![Tunisian couscous](desktop-pos/assets/tunisian-couscous.jpg)
+
 
 ## Delivery scope
 
@@ -140,12 +140,6 @@ All paths in the table above are relative to `/api/v1`. Catalog reads, order cre
 
 Change all default credentials and the JWT secret before any shared or production deployment. Do not commit `backend-pos/.env`.
 
-## Visual asset sources
-
-The future desktop UI includes downloaded visual references, retained with their source pages for licence review before production use:
-
-- `desktop-pos/assets/tunisian-couscous.jpg` — [Kids World Travel Guide / Tunisia](https://www.kids-world-travel-guide.com/tunisia.html)
-- `desktop-pos/assets/tunisian-cafe.jpg` — [Journal du Net / Tunis](https://www.journaldunet.com/management/vie-personnelle/1507171-20-destinations-pour-un-week-end-prolonge/1507211-tunis)
 
 ## Important implementation note
 
