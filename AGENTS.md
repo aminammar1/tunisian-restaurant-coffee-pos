@@ -3,7 +3,7 @@
 ## Layout
 - `backend-pos/` — Spring Boot API (only implemented part). Package `tn.cafe.pos`.
 - `desktop-pos/` — empty, reserved for future JavaFX frontend. Do not scaffold until asked.
-- No README, no CI, not a git repo yet. Only `.gitignore` is `backend-pos/.gitignore` (Spring Initializr default).
+- No README, no CI. Only `.gitignore` files are root `.gitignore` + `backend-pos/.gitignore`.
 
 ## Backend stack (verified in `backend-pos/pom.xml`)
 - Spring Boot `4.1.1`, Java `26`, MongoDB, JJWT `0.12.6`, springdoc `3.1.0`.
@@ -20,7 +20,7 @@
 ## Env / config gotchas
 - `src/main/resources/application.properties` reads env vars with local defaults; Spring does NOT load `.env` (no dotenv lib). Export vars in shell or pass `-Dspring.data.mongodb.uri=...` when running tests/app.
 - Template: `backend-pos/.env.example`. Real `backend-pos/.env` holds an Atlas URI + a generated JWT secret.
-- WARNING: `.gitignore` does not exclude `.env`. Never commit `.env`; add it to ignore before first commit.
+- `.env` (Atlas URI + JWT secret) is git-ignored at root and in `backend-pos/`. Never force-add it.
 - Atlas DB name is the URI path segment (`...mongodb.net/pos_tunisie?...`) plus `MONGODB_DATABASE=pos_tunisie`.
 
 ## Rules you will otherwise break
