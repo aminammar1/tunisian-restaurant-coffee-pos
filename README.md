@@ -1,15 +1,21 @@
-# POS Tunisie — Café / Restaurant Point of Sale
+# POS Tunisie ☕
 
-Backend for a Tunisian café/restaurant POS: manager mode (French) + customer mode.
+Cafe and restaurant point of sale for Tunisia: manager mode (French) plus customer mode.
 Payments are 100% simulated (QR, Apple Pay, card, cash, infrared proximity). No real gateway.
 
 Status: **backend done and tested**. JavaFX desktop frontend comes next.
 
 ## Stack
 
-- Java 26, Spring Boot 4.1.1, MongoDB (Atlas), Maven wrapper
-- JWT auth (JJWT), OpenAPI/Swagger (springdoc), SSE real-time orders
-- Clean Architecture: `domain` / `application` / `infrastructure` / `presentation`
+• ☕ Java 26
+• 🌱 Spring Boot 4.1.1
+• 🍃 MongoDB Atlas
+• 🔑 JWT auth
+• 📄 Swagger OpenAPI docs
+• 📡 SSE real time orders
+• 🐳 Docker ready
+• 🖥️ JavaFX desktop frontend (coming next)
+• 🏛️ Clean Architecture: `domain` / `application` / `infrastructure` / `presentation`
 
 ## Quickstart
 
@@ -40,13 +46,13 @@ Swagger UI: `http://localhost:8080/swagger-ui.html`, JSON: `/api-docs`.
 | Orders | `POST/GET /api/v1/orders`, `GET /api/v1/orders/{id}`, `PATCH .../statut`, `POST .../annuler` |
 | Payments (simulated) | `POST /api/v1/payments/confirmer`, `POST /api/v1/payments/proximite`, `GET /api/v1/payments` |
 | Tickets | `GET /api/v1/tickets`, `GET /api/v1/tickets/{id}` |
-| Real-time | `GET /api/v1/notifications/stream` (SSE) |
+| Real time | `GET /api/v1/notifications/stream` (SSE) |
 
-Default manager: `admin` / `admin123@`, PIN `1234`, QR key via `ADMIN_QR_KEY` (auto-generated if left as `CHANGE-ME`).
+Default manager: `admin` / `admin123@`, PIN `1234`, QR key via `ADMIN_QR_KEY` (auto generated if left as default).
 
-Paying an order marks it `PAYEE` and auto-generates 2 tickets: `SERVICE` (kitchen) + `CLIENT` (receipt).
+Paying an order marks it `PAYEE` and auto generates 2 tickets: `SERVICE` (kitchen) + `CLIENT` (receipt).
 
 ## Layout
 
-- `backend-pos/` — Spring Boot API
-- `desktop-pos/` — reserved for the JavaFX frontend (empty)
+• `backend-pos/`: Spring Boot API
+• `desktop-pos/`: reserved for the JavaFX frontend (empty)
