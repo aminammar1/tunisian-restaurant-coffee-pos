@@ -1,0 +1,22 @@
+# build outputs
+*/target/
+*/build/
+
+# secrets & local env
+.env
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# OS
+.DS_Store
+Thumbs.db
+
+# JavaFX desktop (until scaffolded, keep ignored artifacts out)
+desktop-pos/build/
+desktop-pos/out/
