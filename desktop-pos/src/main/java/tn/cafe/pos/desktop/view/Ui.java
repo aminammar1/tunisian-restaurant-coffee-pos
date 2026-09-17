@@ -47,6 +47,33 @@ public final class Ui {
     public static String safe(String text) { return I18n.sanitize(text); }
 
     /**
+     * Human-readable error text: the backend answers {@code {"erreur":"..."}}
+     * and {@link tn.cafe.pos.desktop.core.api.ApiClient.ApiException} would otherwise
+     * surface raw JSON like {@code HTTP 400 {"erreur":"commande terminée...}}.
+     * Pure function (unit-tested, no toolkit needed).
+     */
+    public static String friendlyError(Throwable ex) {
+        if (ex instanceof tn.cafe.pos.desktop.core.api.ApiClient.ApiException api && api.body != null) {
+            String body = api.body.strip();
+            int key = body.indexOf("\"erreur\"");
+            if (key >= 0) {
+                int colon = body.indexOf(':', key);
+                int open = colon < 0 ? -1 : body.indexOf('"', colon);
+                int close = open < 0 ? -1 : body.indexOf('"', open + 1);
+                if (close > open) return safe(body.substring(open + 1, close));
+            }
+            if (!body.isBlank()) return safe(trimmed(body));
+        }
+        String raw = ex == null ? null : ex.getMessage();
+        String msg = (raw == null || raw.isBlank()) ? (ex == null ? "" : ex.getClass().getSimpleName()) : raw.strip();
+        return safe(trimmed(msg));
+    }
+
+    private static String trimmed(String s) {
+        return s.length() > 160 ? s.substring(0, 160) + "..." : s;
+    }
+
+    /**
      * Parses a typed price: trims, accepts comma or dot decimals, ignores grouping
      * spaces ("1 000" → 1000). Empty unless the value is a valid non-negative number.
      * Pure function (unit-tested, no toolkit needed).
@@ -119,6 +146,27 @@ public final class Ui {
     public static <T extends Node> T ltr(T node) {
         node.setNodeOrientation(NodeOrientation.LEFT_TO_RIGHT);
         return node;
+    }
+
+    /**
+     * Brand/glyph icon (Ikonli font packs) tinted to the active theme: crimson on
+     * light cards, bright red on dark cards, white on solid red cards. Single
+     * glyph node — no text, so RTL-safe by construction.
+     */
+    public static org.kordamp.ikonli.javafx.FontIcon icon(org.kordamp.ikonli.Ikon ikon, int size) {
+        return icon(ikon, size, ThemeManager.current() == ThemeManager.Mode.DARK ? "#ff8d9a" : "#c8102e");
+    }
+
+    /** White glyph for solid red surfaces (manager card, red buttons). */
+    public static org.kordamp.ikonli.javafx.FontIcon iconOnRed(org.kordamp.ikonli.Ikon ikon, int size) {
+        return icon(ikon, size, "#ffffff");
+    }
+
+    private static org.kordamp.ikonli.javafx.FontIcon icon(org.kordamp.ikonli.Ikon ikon, int size, String hex) {
+        var icon = new org.kordamp.ikonli.javafx.FontIcon(ikon);
+        icon.setIconSize(size);
+        icon.setIconColor(javafx.scene.paint.Color.web(hex));
+        return icon;
     }
 
     /**

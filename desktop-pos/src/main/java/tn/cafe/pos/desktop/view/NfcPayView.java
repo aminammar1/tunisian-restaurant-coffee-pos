@@ -94,7 +94,7 @@ public class NfcPayView extends BorderPane {
                 Platform.runLater(() -> router.go(Router.Route.TICKET, getValue()));
             }
             @Override protected void failed() {
-                Platform.runLater(() -> status.setText(I18n.t("nfc.failed", getException().getMessage())));
+                Platform.runLater(() -> status.setText(I18n.t("nfc.failed", Ui.friendlyError(getException()))));
             }
         };
         new Thread(t, "pay-nfc").start();

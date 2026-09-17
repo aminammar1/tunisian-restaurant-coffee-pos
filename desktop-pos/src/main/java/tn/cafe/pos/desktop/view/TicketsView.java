@@ -70,7 +70,7 @@ public class TicketsView extends BorderPane {
                 });
             }
             @Override protected void failed() {
-                Platform.runLater(() -> preview.setText(I18n.t("tickets.failed", getException().getMessage())));
+                Platform.runLater(() -> preview.setText(I18n.t("tickets.failed", Ui.friendlyError(getException()))));
             }
         };
         new Thread(t, "tickets-load").start();

@@ -102,7 +102,7 @@ public class QrPayView extends BorderPane implements ViewLifecycle {
                 Platform.runLater(() -> { scanner.stop(); router.go(Router.Route.TICKET, getValue()); });
             }
             @Override protected void failed() {
-                Platform.runLater(() -> status.setText(I18n.t("qr.failed", getException().getMessage())));
+                Platform.runLater(() -> status.setText(I18n.t("qr.failed", Ui.friendlyError(getException()))));
             }
         };
         new Thread(t, "pay-qr").start();

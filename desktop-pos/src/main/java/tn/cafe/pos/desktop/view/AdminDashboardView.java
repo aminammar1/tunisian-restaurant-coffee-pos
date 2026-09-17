@@ -126,10 +126,10 @@ public class AdminDashboardView extends BorderPane implements ViewLifecycle {
         return box;
     }
 
-    private String selectedId() {
-        int index = ordersList.getSelectionModel().getSelectedIndex();
-        if (index < 0 || index >= cache.length) return null;
-        return cache[index].id();
+    /** Paid/cancelled orders are terminal: the backend rejects any change with 400. */
+    private static boolean isTerminal(Order order) {
+        if (order == null || order.statut() == null) return false;
+        return "PAYEE".equals(order.statut()) || "ANNULEE".equals(order.statut());
     }
 
     private void load() {
@@ -144,34 +144,44 @@ public class AdminDashboardView extends BorderPane implements ViewLifecycle {
                 });
             }
             @Override protected void failed() {
-                Platform.runLater(() -> feed.getItems().add(0, I18n.t("dashboard.loadFailed", getException().getMessage())));
+                Platform.runLater(() -> feed.getItems().add(0, I18n.t("dashboard.loadFailed", Ui.friendlyError(getException()))));
             }
         };
         new Thread(t, "orders-load").start();
     }
 
     private void changerStatut(StatusOption statut) {
-        String id = selectedId();
-        if (id == null || statut == null) return;
+        int index = ordersList.getSelectionModel().getSelectedIndex();
+        if (index < 0 || index >= cache.length || statut == null) return;
+        if (isTerminal(cache[index])) {
+            feed.getItems().add(0, Ui.safe(I18n.t("dashboard.statusLocked")));
+            return;
+        }
+        String id = cache[index].id();
         var t = new Task<Order>() {
             @Override protected Order call() throws Exception {
                 return ApiClient.get().patch("/orders/" + id + "/statut", java.util.Map.of("statut", statut.api()), Order.class);
             }
             @Override protected void succeeded() { Platform.runLater(() -> load()); }
-            @Override protected void failed() { Platform.runLater(() -> feed.getItems().add(0, I18n.t("dashboard.statusFailed", getException().getMessage()))); }
+            @Override protected void failed() { Platform.runLater(() -> feed.getItems().add(0, I18n.t("dashboard.statusFailed", Ui.friendlyError(getException())))); }
         };
         new Thread(t, "order-status").start();
     }
 
     private void annuler() {
-        String id = selectedId();
-        if (id == null) return;
+        int index = ordersList.getSelectionModel().getSelectedIndex();
+        if (index < 0 || index >= cache.length) return;
+        if (isTerminal(cache[index])) {
+            feed.getItems().add(0, Ui.safe(I18n.t("dashboard.statusLocked")));
+            return;
+        }
+        String id = cache[index].id();
         var t = new Task<Order>() {
             @Override protected Order call() throws Exception {
                 return ApiClient.get().post("/orders/" + id + "/annuler", null, Order.class);
             }
             @Override protected void succeeded() { Platform.runLater(() -> load()); }
-            @Override protected void failed() { Platform.runLater(() -> feed.getItems().add(0, I18n.t("dashboard.cancelFailed", getException().getMessage()))); }
+            @Override protected void failed() { Platform.runLater(() -> feed.getItems().add(0, I18n.t("dashboard.cancelFailed", Ui.friendlyError(getException())))); }
         };
         new Thread(t, "order-cancel").start();
     }

@@ -39,11 +39,11 @@ public class PaymentView extends BorderPane {
         grid.setMaxWidth(720);
         grid.setPrefWrapLength(640);
         grid.getChildren().addAll(
-            payCard(router, order, I18n.t("payment.qr"), I18n.t("payment.qr.desc"), "QR"),
-            payCard(router, order, I18n.t("payment.nfc"), I18n.t("payment.nfc.desc"), "INFRARED"),
-            payCard(router, order, I18n.t("payment.apple"), I18n.t("payment.apple.desc"), "APPLE_PAY"),
-            payCard(router, order, I18n.t("payment.card"), I18n.t("payment.card.desc"), "CARD"),
-            payCard(router, order, I18n.t("payment.cash"), I18n.t("payment.cash.desc"), "CASH"));
+            payCard(router, order, org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.QRCODE, I18n.t("payment.qr"), I18n.t("payment.qr.desc"), "QR"),
+            payCard(router, order, org.kordamp.ikonli.materialdesign2.MaterialDesignN.NFC, I18n.t("payment.nfc"), I18n.t("payment.nfc.desc"), "INFRARED"),
+            payCard(router, order, org.kordamp.ikonli.fontawesome5.FontAwesomeBrands.APPLE_PAY, I18n.t("payment.apple"), I18n.t("payment.apple.desc"), "APPLE_PAY"),
+            payCard(router, order, org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.CREDIT_CARD, I18n.t("payment.card"), I18n.t("payment.card.desc"), "CARD"),
+            payCard(router, order, org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.MONEY_BILL_WAVE, I18n.t("payment.cash"), I18n.t("payment.cash.desc"), "CASH"));
         status.setWrapText(false);
         status.setTextOverrun(javafx.scene.control.OverrunStyle.ELLIPSIS);
         status.setMaxWidth(Ui.MAX_TEXT_WIDTH);
@@ -52,14 +52,16 @@ public class PaymentView extends BorderPane {
         setCenter(Ui.vscroll(center));
     }
 
-    private VBox payCard(Router router, Order order, String title, String desc, String type) {
+    private VBox payCard(Router router, Order order, org.kordamp.ikonli.Ikon ikon, String title, String desc, String type) {
         var c = new VBox(8);
         c.getStyleClass().add("mode-card");
         c.setAlignment(Pos.CENTER);
-        c.setPadding(new Insets(20));
-        c.setMinSize(260, 170);
-        c.setMaxSize(300, 220);
-        c.setPrefSize(280, 190);
+        c.setPadding(new Insets(18));
+        // Fixed size: every payment method renders an identical tile.
+        c.setMinSize(280, 236);
+        c.setPrefSize(280, 236);
+        c.setMaxSize(280, 236);
+        var glyph = Ui.icon(ikon, 44);
         var t = Ui.oneLine(title, "card-title");
         t.setMaxWidth(240);
         t.setAlignment(Pos.CENTER);
@@ -72,7 +74,7 @@ public class PaymentView extends BorderPane {
             else if ("INFRARED".equals(type)) router.go(Router.Route.NFC_PAY, order == null ? type : new PayCtx(order, type));
             else confirmer(router, order, type);
         });
-        c.getChildren().addAll(t, d, b);
+        c.getChildren().addAll(glyph, t, d, b);
         return c;
     }
 
@@ -94,7 +96,7 @@ public class PaymentView extends BorderPane {
             }
 
             @Override protected void failed() {
-                Platform.runLater(() -> status.setText(I18n.t("payment.failed", getException().getMessage())));
+                Platform.runLater(() -> status.setText(I18n.t("payment.failed", Ui.friendlyError(getException()))));
             }
         };
         Thread worker = new Thread(task, "pay-" + type.toLowerCase());

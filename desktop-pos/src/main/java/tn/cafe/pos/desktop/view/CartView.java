@@ -105,7 +105,7 @@ public class CartView extends BorderPane {
                 });
             }
             @Override protected void failed() {
-                Platform.runLater(() -> status.setText(I18n.t("cart.unavailable", getException().getMessage())));
+                Platform.runLater(() -> status.setText(I18n.t("cart.unavailable", Ui.friendlyError(getException()))));
             }
         };
         new Thread(t, "order-create").start();

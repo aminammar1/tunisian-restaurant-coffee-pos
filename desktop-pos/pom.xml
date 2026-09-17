@@ -21,6 +21,7 @@
     <zxing.version>3.5.3</zxing.version>
     <webcam.version>0.3.12</webcam.version>
     <atlantafx.version>2.1.0</atlantafx.version>
+    <ikonli.version>12.4.0</ikonli.version>
     <junit.version>5.11.0</junit.version>
     <javafx-maven-plugin.version>0.0.8</javafx-maven-plugin.version>
     <!-- Backend URL override: ./mvnw javafx:run -Dpos.apiBase=http://... — empty = auto-detect -->
@@ -34,6 +35,24 @@
       <groupId>io.github.mkpaz</groupId>
       <artifactId>atlantafx-base</artifactId>
       <version>${atlantafx.version}</version>
+    </dependency>
+
+    <!-- Icons: Ikonli font packs (pure JavaFX nodes, no internal API use).
+         FontAwesome5 brands carry Apple Pay / Google Pay glyphs. -->
+    <dependency>
+      <groupId>org.kordamp.ikonli</groupId>
+      <artifactId>ikonli-javafx</artifactId>
+      <version>${ikonli.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.kordamp.ikonli</groupId>
+      <artifactId>ikonli-fontawesome5-pack</artifactId>
+      <version>${ikonli.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.kordamp.ikonli</groupId>
+      <artifactId>ikonli-materialdesign2-pack</artifactId>
+      <version>${ikonli.version}</version>
     </dependency>
 
     <!-- JavaFX -->

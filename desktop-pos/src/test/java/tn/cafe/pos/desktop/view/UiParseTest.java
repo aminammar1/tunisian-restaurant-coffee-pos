@@ -30,6 +30,19 @@ class UiParseTest {
     }
 
     @Test
+    void extractsBackendErreurField() {
+        var api = new tn.cafe.pos.desktop.core.api.ApiClient.ApiException(
+                400, "{\"erreur\":\"commande terminée : statut non modifiable\"}");
+        assertEquals("commande terminée : statut non modifiable", Ui.friendlyError(api));
+    }
+
+    @Test
+    void fallsBackToPlainMessages() {
+        assertEquals("boom", Ui.friendlyError(new RuntimeException("boom")));
+        assertEquals("RuntimeException", Ui.friendlyError(new RuntimeException()));
+    }
+
+    @Test
     void acceptsBlankOrHttpUrlsOnly() {
         assertTrue(Ui.isWebImageUrlOk(null));
         assertTrue(Ui.isWebImageUrlOk(""));

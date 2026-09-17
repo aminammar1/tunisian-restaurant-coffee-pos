@@ -167,7 +167,7 @@ public class AdminLoginView extends BorderPane implements ViewLifecycle {
                 Platform.runLater(() -> { scanner.stop(); router.go(Router.Route.ADMIN_DASH); });
             }
             @Override protected void failed() {
-                Platform.runLater(() -> target.setText(I18n.t("login.failed", getException().getMessage())));
+                Platform.runLater(() -> target.setText(I18n.t("login.failed", Ui.friendlyError(getException()))));
             }
         };
         new Thread(t, "admin-login").start();

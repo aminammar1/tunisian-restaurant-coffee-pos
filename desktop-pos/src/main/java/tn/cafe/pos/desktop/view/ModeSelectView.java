@@ -34,11 +34,13 @@ public class ModeSelectView extends BorderPane {
         cards.setMaxWidth(820);
 
         var clientCard = modeCard(I18n.t("mode.customer"),
-                I18n.t("mode.customer.desc"), I18n.t("mode.customer.cta"), "mode-card");
+                I18n.t("mode.customer.desc"), I18n.t("mode.customer.cta"), "mode-card",
+                Ui.icon(org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.USERS, 52));
         clientCard.setOnMouseClicked(e -> router.go(Router.Route.CATALOG));
 
         var gerantCard = modeCard(I18n.t("mode.manager"),
-                I18n.t("mode.manager.desc"), I18n.t("mode.manager.cta"), "red-card");
+                I18n.t("mode.manager.desc"), I18n.t("mode.manager.cta"), "red-card",
+                Ui.iconOnRed(org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.USER_COG, 52));
         gerantCard.setOnMouseClicked(e -> router.go(Router.Route.ADMIN_LOGIN));
 
         cards.getChildren().addAll(clientCard, gerantCard);
@@ -51,14 +53,14 @@ public class ModeSelectView extends BorderPane {
         setCenter(Ui.vscroll(center));
     }
 
-    private static VBox modeCard(String title, String desc, String cta, String cls) {
+    private static VBox modeCard(String title, String desc, String cta, String cls, Node glyph) {
         var c = new VBox(10);
         c.getStyleClass().addAll("mode-card", cls);
         c.setAlignment(Pos.CENTER);
-        c.setPadding(new Insets(26));
-        c.setMinSize(300, 240);
-        c.setMaxSize(380, 300);
-        c.setPrefSize(340, 260);
+        c.setPadding(new Insets(24));
+        c.setMinSize(300, 290);
+        c.setPrefSize(340, 310);
+        c.setMaxSize(380, 340);
         var t = Ui.oneLine(title, "card-title");
         t.setAlignment(Pos.CENTER);
         t.setMaxWidth(300);
@@ -67,7 +69,7 @@ public class ModeSelectView extends BorderPane {
         var b = Ui.oneLine(cta, "cta");
         b.setAlignment(Pos.CENTER);
         b.setMaxWidth(300);
-        c.getChildren().addAll(t, d, b);
+        c.getChildren().addAll(glyph, t, d, b);
         return c;
     }
 

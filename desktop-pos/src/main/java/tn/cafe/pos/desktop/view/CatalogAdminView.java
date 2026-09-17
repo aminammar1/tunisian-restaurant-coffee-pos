@@ -190,7 +190,7 @@ public class CatalogAdminView extends BorderPane {
                     load(getValue() == null ? null : getValue().id());
                 });
             }
-            @Override protected void failed() { Platform.runLater(() -> status.setText(Ui.safe(I18n.t("catalogAdmin.createFailed", getException().getMessage())))); }
+            @Override protected void failed() { Platform.runLater(() -> status.setText(Ui.safe(I18n.t("catalogAdmin.createFailed", Ui.friendlyError(getException()))))); }
         };
         var thread = new Thread(t, "prod-create");
         thread.setDaemon(true);
@@ -206,7 +206,7 @@ public class CatalogAdminView extends BorderPane {
                         "ordre", loadedCategories.size(), "imageUrl", imageUrl == null ? "" : imageUrl), Category.class);
             }
             @Override protected void succeeded() { Platform.runLater(() -> { status.setText(Ui.safe(I18n.t("catalogAdmin.categoryCreated"))); load(); }); }
-            @Override protected void failed() { Platform.runLater(() -> status.setText(Ui.safe(I18n.t("catalogAdmin.createFailed", getException().getMessage())))); }
+            @Override protected void failed() { Platform.runLater(() -> status.setText(Ui.safe(I18n.t("catalogAdmin.createFailed", Ui.friendlyError(getException()))))); }
         };
         var thread = new Thread(t, "category-create");
         thread.setDaemon(true);
@@ -225,7 +225,7 @@ public class CatalogAdminView extends BorderPane {
                         Map.of("disponible", !cur), Product.class);
             }
             @Override protected void succeeded() { Platform.runLater(() -> load(id)); }
-            @Override protected void failed() { Platform.runLater(() -> status.setText(Ui.safe(I18n.t("catalogAdmin.availabilityFailed", getException().getMessage())))); }
+            @Override protected void failed() { Platform.runLater(() -> status.setText(Ui.safe(I18n.t("catalogAdmin.availabilityFailed", Ui.friendlyError(getException()))))); }
         };
         var thread = new Thread(t, "prod-dispo");
         thread.setDaemon(true);
@@ -237,7 +237,7 @@ public class CatalogAdminView extends BorderPane {
         var t = new Task<Void>() {
             @Override protected Void call() throws Exception { ApiClient.get().delete("/products/" + id); return null; }
             @Override protected void succeeded() { Platform.runLater(() -> load()); }
-            @Override protected void failed() { Platform.runLater(() -> status.setText(Ui.safe(I18n.t("catalogAdmin.deleteFailed", getException().getMessage())))); }
+            @Override protected void failed() { Platform.runLater(() -> status.setText(Ui.safe(I18n.t("catalogAdmin.deleteFailed", Ui.friendlyError(getException()))))); }
         };
         var thread = new Thread(t, "prod-del");
         thread.setDaemon(true);
@@ -252,7 +252,7 @@ public class CatalogAdminView extends BorderPane {
         var t = new Task<Void>() {
             @Override protected Void call() throws Exception { ApiClient.get().delete("/categories/" + id); return null; }
             @Override protected void succeeded() { Platform.runLater(() -> load()); }
-            @Override protected void failed() { Platform.runLater(() -> status.setText(Ui.safe(I18n.t("catalogAdmin.deleteFailed", getException().getMessage())))); }
+            @Override protected void failed() { Platform.runLater(() -> status.setText(Ui.safe(I18n.t("catalogAdmin.deleteFailed", Ui.friendlyError(getException()))))); }
         };
         var thread = new Thread(t, "category-del");
         thread.setDaemon(true);
