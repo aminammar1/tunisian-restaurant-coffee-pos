@@ -10,7 +10,7 @@
 | --- | --- |
 | Product scope | Café and restaurant point of sale |
 | Primary users | Manager, cashier, kitchen/service team, customer |
-| Delivery status | Backend API implemented and unit-tested; desktop interface is the next milestone |
+| Delivery status | Backend API and JavaFX desktop client implemented and tested |
 | Language | French-oriented workflows and Tunisia-specific configuration |
 | Payments | Fully simulated — no real payment gateway is connected |
 
@@ -36,6 +36,36 @@ POS Tunisie gives an establishment one operational flow from catalog to receipt:
 | Real-time operations | Live order notifications over SSE |
 | API documentation | Interactive Swagger/OpenAPI documentation |
 
+## Desktop application
+
+The `desktop-pos/` module is the JavaFX client for customer self-service and manager operations. It connects to the Spring Boot API over REST and receives live order updates through SSE.
+
+### Main workflows
+
+- **Customer mode:** browse the café catalog, add items to a basket, review the order, and confirm a simulated payment using cash, card, QR, NFC/proximity, or configured digital methods.
+- **Manager mode:** sign in with a password, PIN, or manager QR badge; monitor live orders; manage categories and products; review tickets; and change application settings.
+- **Tickets:** the backend generates a service/kitchen ticket and a customer receipt after simulated payment confirmation.
+- **Interface:** English and French-oriented labels, light/dark theme switching, responsive JavaFX layouts, Tunisian café imagery, QR support, and 58 mm ticket previews.
+
+### Desktop screenshots
+
+The following screenshots were captured from the running JavaFX client connected to the local backend:
+
+![POS Tunisie welcome screen](docs/screenshots/desktop-main.png)
+
+![POS Tunisie manager sign-in](docs/screenshots/desktop-manager-login.png)
+
+### Desktop verification
+
+Run the desktop tests from the module directory:
+
+```bash
+cd desktop-pos
+./mvnw test
+```
+
+Verification status: 19 tests passed, including UI parsing, headless UI smoke coverage, Arabic layout safety, QR/proximity behavior, and localization/text safety.
+
 
 
 ## Delivery scope
@@ -50,9 +80,12 @@ POS Tunisie gives an establishment one operational flow from catalog to receipt:
 - Swagger UI and Docker build definition
 - Unit-test suite that runs without a database
 
-### Next milestone
+### Desktop client
 
-The `desktop-pos/` area is reserved for the JavaFX desktop application. Its initial assets are available in `desktop-pos/assets/`; no desktop application has been scaffolded yet.
+- JavaFX customer and manager application in `desktop-pos/`
+- REST and SSE integration with the backend
+- Catalog, basket, payment, ticket, authentication, QR, NFC/proximity, and settings views
+- Reference imagery in `desktop-pos/assets/`
 
 ## Technical foundation
 
@@ -71,8 +104,10 @@ The `desktop-pos/` area is reserved for the JavaFX desktop application. Its init
 
 ```text
 backend-pos/     Spring Boot API
-desktop-pos/     Reserved JavaFX desktop client
+desktop-pos/     JavaFX desktop client
   assets/        Tunisian cuisine and café reference imagery for the future UI
+docs/screenshots/ Live desktop application screenshots
+LICENSE          Custom non-commercial license
 ```
 
 ## Run locally
@@ -94,7 +129,20 @@ cd backend-pos
 ./mvnw spring-boot:run
 ```
 
-The unit tests mock MongoDB and therefore do not require a running database. Environment files are not loaded automatically by Spring; export their values in your shell or pass them as Spring properties when launching the application.
+In a second terminal, run the desktop client:
+
+```bash
+cd desktop-pos
+./mvnw javafx:run -Dpos.apiBase=http://localhost:8080/api/v1
+```
+
+Or start both services together from the repository root:
+
+```bash
+./run-all.sh
+```
+
+The backend unit tests mock MongoDB and therefore do not require a running database. The desktop tests use headless JavaFX smoke checks and do not require a display. Environment files are loaded from `backend-pos/.env` by the configured application startup support.
 
 ### Run with Docker
 
@@ -144,3 +192,9 @@ Change all default credentials and the JWT secret before any shared or productio
 ## Important implementation note
 
 Payments are deliberately simulated. This project must not be connected to a real payment gateway without a separate, security-reviewed payment integration scope.
+
+## License and usage
+
+This project is available under the custom [Non-Commercial License](LICENSE). Developers may copy, study, modify, and use the software for personal, educational, or non-commercial purposes. Commercial use, resale, sublicensing, paid hosting, and incorporating the software into a paid product are not permitted without written permission from Mohamed Amine Ammar, the rights holder.
+
+For commercial licensing or permission, contact Mohamed Amine Ammar through the project repository.
