@@ -1,0 +1,104 @@
+/* POS Tunisie — modern red/white kiosk theme (light).
+   Base skin: AtlantaFX PrimerLight. This sheet only overrides tokens + components.
+   Font stack always leads with Noto Sans Arabic (installed on the terminals) so
+   Arabic glyphs shape correctly; never use a bare "monospace" (no Arabic glyphs). */
+.root { -fx-background-color: #f7f5f4; -fx-font-family: "Noto Sans Arabic", "Noto Sans", "Segoe UI", "Tahoma", "Arial", sans-serif; }
+.label { -fx-text-fill: #211a1b; }
+
+/* ---------- top bar ---------- */
+.topbar { -fx-background-color: #ffffff; -fx-border-color: #e9e1de; -fx-border-width: 0 0 1 0; }
+.motif-strip { -fx-background-color: #c8102e; -fx-min-height: 14; -fx-pref-height: 14; -fx-max-height: 14; }
+.banner-frame { -fx-background-color: #c8102e; -fx-background-radius: 14; -fx-border-color: #c8102e; -fx-border-radius: 14; }
+.topbar-title { -fx-font-size: 17px; -fx-font-weight: bold; -fx-text-fill: #8f0f22; }
+.title { -fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #211a1b; -fx-line-spacing: 2; }
+.subtitle { -fx-font-size: 13px; -fx-text-fill: #6f625f; -fx-line-spacing: 2; }
+.section-label { -fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #8f0f22; }
+.hero { -fx-font-size: 34px; -fx-font-weight: bold; -fx-text-fill: #211a1b; -fx-line-spacing: 2; }
+.hint { -fx-font-size: 12px; -fx-text-fill: #8a7d7a; }
+
+/* ---------- buttons: red primary, charcoal secondary, green/amber actions ---------- */
+.btn { -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 12 18; -fx-cursor: hand; -fx-background-insets: 0; -fx-border-width: 0; }
+.primary { -fx-background-color: #c8102e; -fx-text-fill: white; }
+.primary:hover { -fx-background-color: #d21c3a; }
+.primary:pressed { -fx-background-color: #9e0c24; }
+.accent { -fx-background-color: #ffffff; -fx-text-fill: #c8102e; -fx-border-color: #c8102e; -fx-border-width: 1.5; -fx-border-radius: 10; }
+.accent:hover { -fx-background-color: rgba(200,16,46,.07); }
+.accent:pressed { -fx-background-color: rgba(200,16,46,.14); }
+.danger { -fx-background-color: #a41226; -fx-text-fill: white; }
+.danger:hover { -fx-background-color: #bc162c; }
+.danger:pressed { -fx-background-color: #7d0d1d; }
+.button:focused { -fx-focus-color: #c8102e; -fx-faint-focus-color: rgba(200,16,46,.18); }
+.button { -fx-background-insets: 0; -fx-cursor: hand; }
+.btn:disabled { -fx-opacity: .45; }
+
+/* ---------- small chrome: nav, chips, fields ---------- */
+.nav-btn, .icon-btn, .language-menu { -fx-background-color: #ffffff; -fx-border-color: #ddd3d0; -fx-border-radius: 8; -fx-background-radius: 8; -fx-text-fill: #3d3234; -fx-font-size: 13px; -fx-font-weight: bold; -fx-min-height: 42; -fx-padding: 8 12; }
+.nav-btn:hover, .icon-btn:hover, .language-menu:hover { -fx-background-color: rgba(200,16,46,.07); -fx-border-color: #c8102e; }
+.nav-btn:pressed, .icon-btn:pressed, .language-menu:pressed { -fx-background-color: rgba(200,16,46,.14); }
+.nav-btn:focused, .icon-btn:focused, .language-menu:focused { -fx-focus-color: #c8102e; -fx-faint-focus-color: rgba(200,16,46,.18); }
+.chip { -fx-background-color: #ffffff; -fx-border-color: #ddd3d0; -fx-background-radius: 20; -fx-border-radius: 20; -fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #3d3234; -fx-padding: 9 16; -fx-cursor: hand; }
+.chip:hover { -fx-background-color: rgba(200,16,46,.07); -fx-border-color: #c8102e; }
+.chip:pressed { -fx-background-color: rgba(200,16,46,.14); }
+.chip-active { -fx-background-color: #c8102e; -fx-border-color: #c8102e; -fx-text-fill: white; }
+.chip-active:hover { -fx-background-color: #d21c3a; }
+.search, .text-field, .password-field, .text-area, .combo-box { -fx-font-size: 14px; -fx-background-color: #ffffff; -fx-border-color: #d3c9c6; -fx-border-width: 1; -fx-background-radius: 8; -fx-border-radius: 8; -fx-padding: 10 12; -fx-text-fill: #211a1b; -fx-prompt-text-fill: #a29490; }
+.search:focused, .text-field:focused, .password-field:focused, .text-area:focused, .combo-box:focused { -fx-border-color: #c8102e; }
+
+/* ---------- cards: product + mode. Hover/press is a transparent wash only. ---------- */
+.mode-card, .product-card, .ticket { -fx-background-color: #ffffff; -fx-background-radius: 12; -fx-border-color: #e7e0de; -fx-border-radius: 12; -fx-effect: dropshadow(gaussian, rgba(60,30,35,.10), 14, 0, 0, 4); }
+.mode-card { -fx-cursor: hand; }
+.mode-card:hover, .product-card:hover { -fx-background-color: rgba(200,16,46,.05); -fx-border-color: #e5a7b1; }
+.mode-card:pressed, .product-card:pressed { -fx-background-color: rgba(200,16,46,.11); -fx-border-color: #c8102e; }
+.red-card { -fx-background-color: #c8102e; -fx-border-color: #c8102e; }
+.red-card:hover { -fx-background-color: #d21c3a; -fx-border-color: #d21c3a; }
+.red-card:pressed { -fx-background-color: #9e0c24; -fx-border-color: #9e0c24; }
+.red-card .card-title, .red-card .subtitle, .red-card .cta { -fx-text-fill: white; }
+.card-title { -fx-font-size: 17px; -fx-font-weight: bold; -fx-text-fill: #211a1b; -fx-line-spacing: 2; }
+.cta { -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #c8102e; }
+.red-card .cta { -fx-text-fill: white; }
+
+/* ---------- catalog ---------- */
+.category-scroll { -fx-background-color: transparent; }
+.product-name { -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #211a1b; -fx-line-spacing: 1; }
+.price, .live { -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #c8102e; }
+.product-image { -fx-background-color: #f9ecee; -fx-background-radius: 8; }
+.image-placeholder { -fx-background-color: #f9ecee; -fx-text-fill: #b23a4c; -fx-font-size: 13px; -fx-alignment: center; -fx-min-height: 92px; -fx-max-width: 190px; -fx-pref-width: 190px; }
+.scroll, .scroll .viewport, .scroll-pane, .scroll-pane > .viewport, .scroll-pane > .corner { -fx-background-color: transparent; }
+
+/* ---------- cart dock + grand-total bar (like the reference POS) ---------- */
+.cart-dock { -fx-background-color: #ffffff; -fx-border-color: #e9e1de; -fx-border-width: 0 0 0 1; }
+.cart-lines { -fx-background-color: #faf7f6; -fx-background-radius: 8; -fx-border-color: #e7e0de; -fx-border-radius: 8; -fx-font-size: 13px; }
+.grand-total { -fx-background-color: #c8102e; -fx-background-radius: 10; -fx-padding: 14 16; -fx-alignment: center; }
+.cart-total { -fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: white; }
+
+/* ---------- login / panels ---------- */
+.login-shell { -fx-background-color: linear-gradient(to bottom right, #fffafa, #f3e9e7); }
+.login-brand { -fx-background-color: #c8102e; -fx-background-radius: 14; -fx-padding: 28px; -fx-effect: dropshadow(gaussian, rgba(200,16,46,.28), 18, 0, 0, 5); }
+.login-brand .title, .login-brand .subtitle { -fx-text-fill: white; }
+.login-panel { -fx-background-color: white; -fx-background-radius: 14; -fx-padding: 28px; -fx-effect: dropshadow(gaussian, rgba(60,30,35,.12), 18, 0, 0, 5); }
+.login-panel .tabs { -fx-background-color: transparent; }
+.qr-preview { -fx-background-color: #faf3f3; -fx-background-radius: 10; -fx-padding: 14px; -fx-alignment: center; }
+.qr-preview .title { -fx-font-size: 16px; -fx-text-fill: #8f0f22; }
+.cam { -fx-background-color: #191113; -fx-background-radius: 8; }
+
+/* ---------- lists, tickets, misc ---------- */
+.orders, .feed, .list-view { -fx-background-color: #ffffff; -fx-background-radius: 8; -fx-border-color: #e7e0de; -fx-border-radius: 8; -fx-font-size: 13px; }
+.list-view { -fx-background-insets: 0; -fx-padding: 4; }
+.list-cell { -fx-background-color: transparent; -fx-text-fill: #3d3234; -fx-padding: 10 12; }
+.list-cell:filled:selected { -fx-background-color: rgba(200,16,46,.14); -fx-text-fill: #7d0d1d; }
+.scroll-bar .thumb { -fx-background-color: #cfc0bd; -fx-background-radius: 8; }
+.ticket-text { -fx-font-family: "Noto Sans Mono", "Noto Sans Arabic", "DejaVu Sans Mono", monospace; -fx-font-size: 12px; -fx-text-fill: #211a1b; }
+.toast { -fx-background-color: #c8102e; -fx-text-fill: white; -fx-font-size: 13px; -fx-padding: 12 20; -fx-background-radius: 8; }
+.link { -fx-background-color: transparent; -fx-text-fill: #c8102e; -fx-underline: true; -fx-cursor: hand; }
+.tabs .tab { -fx-font-size: 14px; -fx-font-weight: bold; }
+.tab-pane.tabs > .tab-header-area > .headers-region > .tab:selected { -fx-background-color: #c8102e; -fx-background-radius: 8 8 0 0; }
+.tab-pane.tabs > .tab-header-area > .headers-region > .tab:selected .tab-label { -fx-text-fill: white; }
+.signal-label { -fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #c8102e; }
+.pin-key { -fx-background-color: #ffffff; -fx-background-radius: 8; -fx-border-color: #d3c9c6; -fx-border-radius: 8; -fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #3d3234; -fx-cursor: hand; }
+.pin-key:hover { -fx-background-color: rgba(200,16,46,.07); -fx-border-color: #c8102e; }
+.pin-key:pressed { -fx-background-color: rgba(200,16,46,.14); }
+.status { -fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #a41226; }
+.radar-1 { -fx-fill: transparent; -fx-stroke: #c8102e; -fx-stroke-width: 2; -fx-opacity: .9; }
+.radar-2 { -fx-fill: transparent; -fx-stroke: #c8102e; -fx-stroke-width: 2; -fx-opacity: .6; }
+.radar-3 { -fx-fill: transparent; -fx-stroke: #c8102e; -fx-stroke-width: 2; -fx-opacity: .3; }
+.radar-hit { -fx-background-color: rgba(200,16,46,.12); -fx-background-radius: 150; }

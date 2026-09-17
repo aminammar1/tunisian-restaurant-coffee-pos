@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>tn.cafe.pos</groupId>
+  <artifactId>desktop-pos</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <name>desktop-pos — JavaFX POS (Client + Gérant)</name>
+  <description>JavaFX desktop POS calling Spring Boot backend via REST + SSE. MVVM, dark/light, QR webcam, NFC simu, tickets 58mm.</description>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.release>21</maven.compiler.release>
+    <!-- Align OpenJFX with AtlantaFX 2.1 and the Java 26 runtime used by the project.
+         JavaFX 24 carries text-layout fixes (PrismTextLayout RTL/trailing-space crashes
+         seen with Arabic labels on JavaFX 23) and pairs better with JDK 26. -->
+    <javafx.version>24.0.2</javafx.version>
+    <jackson.version>2.17.2</jackson.version>
+    <zxing.version>3.5.3</zxing.version>
+    <webcam.version>0.3.12</webcam.version>
+    <atlantafx.version>2.1.0</atlantafx.version>
+    <junit.version>5.11.0</junit.version>
+    <javafx-maven-plugin.version>0.0.8</javafx-maven-plugin.version>
+    <!-- Backend URL override: ./mvnw javafx:run -Dpos.apiBase=http://... — empty = auto-detect -->
+    <pos.apiBase></pos.apiBase>
+  </properties>
+
+    <dependencies>
+    <!-- Modern, accessible base skin for the standard JavaFX controls. Our cafe theme
+         below intentionally overrides its colour tokens and component details. -->
+    <dependency>
+      <groupId>io.github.mkpaz</groupId>
+      <artifactId>atlantafx-base</artifactId>
+      <version>${atlantafx.version}</version>
+    </dependency>
+
+    <!-- JavaFX -->
+    <dependency>
+      <groupId>org.openjfx</groupId>
+      <artifactId>javafx-controls</artifactId>
+      <version>${javafx.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.openjfx</groupId>
+      <artifactId>javafx-media</artifactId>
+      <version>${javafx.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.openjfx</groupId>
+      <artifactId>javafx-swing</artifactId>
+      <version>${javafx.version}</version>
+    </dependency>
+
+    <!-- JSON -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-datatype-jsr310</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+
+    <!-- QR encode/decode -->
+    <dependency>
+      <groupId>com.google.zxing</groupId>
+      <artifactId>core</artifactId>
+      <version>${zxing.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.zxing</groupId>
+      <artifactId>javase</artifactId>
+      <version>${zxing.version}</version>
+    </dependency>
+
+    <!-- Webcam for QR scan -->
+    <dependency>
+      <groupId>com.github.sarxos</groupId>
+      <artifactId>webcam-capture</artifactId>
+      <version>${webcam.version}</version>
+    </dependency>
+
+    <!-- Tests -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- Headless Glass driver so HeadlessUiSmokeTest can force CSS+layout
+         (the pass where the Arabic Prism crash happened) without a display. -->
+    <dependency>
+      <groupId>org.testfx</groupId>
+      <artifactId>openjfx-monocle</artifactId>
+      <version>21.0.2</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.13.0</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.5.0</version>
+      </plugin>
+      <plugin>
+        <groupId>org.openjfx</groupId>
+        <artifactId>javafx-maven-plugin</artifactId>
+        <version>${javafx-maven-plugin.version}</version>
+        <configuration>
+          <mainClass>tn.cafe.pos.desktop.DesktopPosApp</mainClass>
+          <options>
+            <!-- Required by newer JDKs for JavaFX native rendering without a warning. -->
+            <option>--enable-native-access=javafx.graphics</option>
+            <!-- Webcam (bridj) loads its native lib reflectively; allow without warnings. -->
+            <option>--enable-native-access=ALL-UNNAMED</option>
+          </options>
+          <!-- Forward -Dpos.apiBase into the app JVM; empty value = auto-detect in AppConfig -->
+          <systemProperties>
+            <systemProperty>
+              <name>pos.apiBase</name>
+              <value>${pos.apiBase}</value>
+            </systemProperty>
+          </systemProperties>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

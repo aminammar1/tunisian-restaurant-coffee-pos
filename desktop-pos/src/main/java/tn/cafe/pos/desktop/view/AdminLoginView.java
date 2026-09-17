@@ -1,0 +1,179 @@
+package tn.cafe.pos.desktop.view;
+
+import java.util.Map;
+import javafx.application.Platform;
+import javafx.concurrent.Task;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Label;
+import javafx.scene.control.PasswordField;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
+import javafx.scene.control.TextField;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+import tn.cafe.pos.desktop.core.api.ApiClient;
+import tn.cafe.pos.desktop.core.api.AuthSession;
+import tn.cafe.pos.desktop.core.i18n.I18n;
+import tn.cafe.pos.desktop.core.router.Router;
+import tn.cafe.pos.desktop.service.QrScannerService;
+import com.github.sarxos.webcam.Webcam;
+
+/** S6 — Connexion Gérant (FR): Mot de passe / PIN / QR webcam. POST /auth/{login,pin,qr}. */
+public class AdminLoginView extends BorderPane implements ViewLifecycle {
+    private final Label status = new Label();
+    private final QrScannerService scanner = new QrScannerService();
+
+    public AdminLoginView(Router router) {
+        getStyleClass().add("root");
+        setTop(new VBox(Ui.topBar(router, I18n.t("login.title"), true), Ui.motifStrip()));
+        var tabs = new TabPane();
+        tabs.getStyleClass().add("tabs");
+        tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+
+        // Mot de passe
+        var user = new TextField("admin"); user.setPromptText(I18n.t("login.username"));
+        var pass = new PasswordField(); pass.setPromptText(I18n.t("login.password.placeholder"));
+        styleAll(user, pass);
+        var b1 = Ui.big(I18n.t("login.connect"), "primary");
+        b1.setOnAction(e -> login(router, "/auth/login", Map.of("username", user.getText(), "password", pass.getText())));
+        tabs.getTabs().add(tab(I18n.t("login.password"), new VBox(10, user, pass, b1, status)));
+
+        // PIN
+        var pinUser = new TextField("admin"); pinUser.setPromptText(I18n.t("login.username"));
+        var pin = new PasswordField(); pin.setPromptText(I18n.t("login.pin.placeholder")); pin.setEditable(false);
+        styleAll(pinUser, pin);
+        var keypad = new GridPane(); keypad.setHgap(8); keypad.setVgap(8); keypad.setAlignment(Pos.CENTER);
+        String[] keys = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "⌫", "0", "C"};
+        for (int i = 0; i < keys.length; i++) {
+            String key = keys[i];
+            var button = new Label(key);
+            button.getStyleClass().add("pin-key");
+            button.setMinSize(72, 54); button.setAlignment(Pos.CENTER);
+            button.setOnMouseClicked(e -> {
+                if ("C".equals(key)) pin.clear();
+                else if ("⌫".equals(key) && !pin.getText().isEmpty()) pin.deleteText(pin.getText().length() - 1, pin.getText().length());
+                else if (pin.getText().length() < 6) pin.appendText(key);
+            });
+            keypad.add(button, i % 3, i / 3);
+        }
+        var b2 = Ui.big(I18n.t("login.validatePin"), "primary");
+        var pinStatus = new Label();
+        var pinBox = new VBox(10, pinUser, pin, keypad, b2, pinStatus);
+        // PinRequest deliberately requires a username; include it so PIN login is a real API call.
+        b2.setOnAction(e -> loginTo(router, "/auth/pin", Map.of("username", pinUser.getText(), "pin", pin.getText()), pinStatus));
+        tabs.getTabs().add(tab(I18n.t("login.pin"), pinBox));
+
+        // QR
+        var preview = new ImageView(); preview.setFitWidth(420); preview.setFitHeight(220); preview.setPreserveRatio(true);
+        preview.getStyleClass().add("cam");
+        var qrField = new TextField(); qrField.setPromptText(I18n.t("login.qr.placeholder"));
+        styleAll(qrField);
+        var qrStatus = new Label(I18n.t("login.qr.note"));
+        var start = Ui.big(I18n.t("login.startCamera"), "accent");
+        var b3 = Ui.big(I18n.t("login.qrConnect"), "primary");
+        Runnable submitQr = () -> { scanner.stop(); loginTo(router, "/auth/qr", Map.of("qrKey", qrField.getText()), qrStatus); };
+        b3.setOnAction(e -> submitQr.run());
+        // Object-close simulation: hold something in front of the lens and the
+        // dark frames auto-submit when a key is typed, otherwise just report it.
+        java.util.function.Consumer<String> onObjectClose = ignored -> {
+            if (qrField.getText().isBlank()) qrStatus.setText(Ui.safe(I18n.t("login.qr.detected")));
+            else submitQr.run();
+        };
+        start.setOnAction(e -> {
+            start.setDisable(true);
+            var open = new Thread(() -> {
+                Webcam cam;
+                try { cam = scanner.openDefault(); }
+                catch (Exception ex) { cam = null; }
+                final Webcam found = cam;
+                javafx.application.Platform.runLater(() -> {
+                    start.setDisable(false);
+                    if (found == null) qrStatus.setText(Ui.safe(I18n.t("login.noCamera")));
+                    else scanner.preview(found, preview, qrField::setText, s -> qrStatus.setText(Ui.safe(s)), onObjectClose);
+                });
+            }, "qr-cam-open");
+            open.setDaemon(true);
+            open.start();
+        });
+        var simulate = Ui.big(I18n.t("login.qr.simulate"), "accent");
+        simulate.setOnAction(e -> onObjectClose.accept("close"));
+        var qrPreview = new VBox(8, Ui.title("QR"), preview);
+        qrPreview.getStyleClass().add("qr-preview");
+        qrPreview.setMaxWidth(Double.MAX_VALUE);
+        preview.setFitWidth(380); preview.setFitHeight(200); preview.setPreserveRatio(true);
+        preview.setPreserveRatio(true);
+        var qrActions = new HBox(10, start, b3, simulate);
+        qrActions.setAlignment(Pos.CENTER);
+        HBox.setHgrow(start, Priority.ALWAYS); HBox.setHgrow(b3, Priority.ALWAYS); HBox.setHgrow(simulate, Priority.ALWAYS);
+        start.setMaxWidth(Double.MAX_VALUE); b3.setMaxWidth(Double.MAX_VALUE); simulate.setMaxWidth(Double.MAX_VALUE);
+        qrStatus.setWrapText(false);
+        qrStatus.setTextOverrun(javafx.scene.control.OverrunStyle.ELLIPSIS);
+        qrStatus.setMaxWidth(420);
+        var qrBox = new VBox(12, qrPreview, qrField, qrActions, qrStatus);
+        qrBox.setMaxWidth(Double.MAX_VALUE);
+        tabs.getTabs().add(tab(I18n.t("login.qr"), qrBox));
+
+        var brandTitle = Ui.oneLine(I18n.t("app.short"), "title");
+        brandTitle.setAlignment(Pos.CENTER);
+        brandTitle.setMaxWidth(224);
+        var brandTag = Ui.oneLine(I18n.t("app.tag"), "subtitle");
+        brandTag.setAlignment(Pos.CENTER);
+        brandTag.setMaxWidth(224);
+        var brand = new VBox(14, Ui.tunisiaBanner(224, 120), brandTitle, brandTag);
+        brand.getStyleClass().add("login-brand");
+        brand.setAlignment(Pos.CENTER);
+        brand.setPrefWidth(280);
+        brand.setMaxWidth(280);
+        brand.setMinWidth(240);
+
+        var access = new VBox(12, Ui.title(I18n.t("login.welcome")), Ui.subtitle(I18n.t("login.subtitle")), tabs);
+        access.getStyleClass().add("login-panel");
+        access.setMaxWidth(680);
+        access.setMinWidth(0);
+        HBox.setHgrow(access, Priority.ALWAYS);
+
+        var center = new HBox(24, brand, access);
+        center.getStyleClass().add("login-shell");
+        center.setAlignment(Pos.CENTER);
+        center.setPadding(new Insets(28, 32, 32, 32));
+        var scroll = Ui.vscroll(center);
+        scroll.setFitToHeight(true);
+        setCenter(scroll);
+    }
+
+    private static Tab tab(String t, VBox content) {
+        content.setPadding(new Insets(18)); content.setAlignment(Pos.CENTER);
+        content.setFillWidth(true);
+        var tab = new Tab(t, content);
+        return tab;
+    }
+    private static void styleAll(javafx.scene.control.TextInputControl... fs) {
+        for (var f : fs) { f.getStyleClass().add("search"); f.setMaxWidth(380); }
+    }
+
+    private void login(Router router, String path, Map<String, String> body) { loginTo(router, path, body, status); }
+
+    private void loginTo(Router router, String path, Map<String, String> body, Label target) {
+        target.setText(I18n.t("login.signing"));
+        var t = new Task<Map<String, Object>>() {
+            @Override protected Map<String, Object> call() throws Exception { return ApiClient.get().postMap(path, body); }
+            @Override protected void succeeded() {
+                Map<String, Object> r = getValue();
+                String token = String.valueOf(r.getOrDefault("token", ""));
+                AuthSession.get().set(token, String.valueOf(r.getOrDefault("username", "gerant")), String.valueOf(r.getOrDefault("role", "GERANT")));
+                Platform.runLater(() -> { scanner.stop(); router.go(Router.Route.ADMIN_DASH); });
+            }
+            @Override protected void failed() {
+                Platform.runLater(() -> target.setText(I18n.t("login.failed", getException().getMessage())));
+            }
+        };
+        new Thread(t, "admin-login").start();
+    }
+
+    @Override public void dispose() { scanner.stop(); }
+}
