@@ -20,12 +20,12 @@ public final class Mappers {
     }
 
     public static Category toCategory(CategoryDocument d) {
-        return new Category(d.id, d.nom, d.description, d.ordre, d.active, d.creeLe);
+        return new Category(d.id, d.nom, d.description, d.ordre, d.active, d.imageUrl, d.creeLe);
     }
     public static CategoryDocument toCategoryDoc(Category c) {
         CategoryDocument d = new CategoryDocument();
         d.id = c.getId(); d.nom = c.getNom(); d.description = c.getDescription();
-        d.ordre = c.getOrdre(); d.active = c.isActive(); d.creeLe = c.getCreeLe();
+        d.ordre = c.getOrdre(); d.active = c.isActive(); d.imageUrl = c.getImageUrl(); d.creeLe = c.getCreeLe();
         return d;
     }
 

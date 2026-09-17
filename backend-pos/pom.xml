@@ -30,6 +30,7 @@
 		<java.version>26</java.version>
 		<jjwt.version>0.12.6</jjwt.version>
 		<springdoc.version>3.1.0</springdoc.version>
+		<spring-dotenv.version>5.1.0</spring-dotenv.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -47,6 +48,12 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>me.paulschwarz</groupId>
+			<artifactId>springboot4-dotenv</artifactId>
+			<version>${spring-dotenv.version}</version>
 		</dependency>
 
 		<dependency>
@@ -73,12 +80,6 @@
 			<scope>runtime</scope>
 		</dependency>
 
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-devtools</artifactId>
-			<scope>runtime</scope>
-			<optional>true</optional>
-		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>

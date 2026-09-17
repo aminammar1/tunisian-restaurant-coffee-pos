@@ -14,9 +14,11 @@ import tn.cafe.pos.application.service.QrKeyService;
 @Tag(name = "Authentification", description = "Login gérant : mot de passe, PIN 1234 ou QR personnel")
 public class AuthController {
     private final AuthService auth;
-    private final QrKeyService qrKeys;
 
-    public AuthController(AuthService auth, QrKeyService qrKeys) { this.auth = auth; this.qrKeys = qrKeys; }
+    public AuthController(AuthService auth, QrKeyService qrKeys) {
+        this.auth = java.util.Objects.requireNonNull(auth);
+        java.util.Objects.requireNonNull(qrKeys);
+    }
 
     @PostMapping("/login")
     @Operation(summary = "Login username/password (admin / admin123@)")

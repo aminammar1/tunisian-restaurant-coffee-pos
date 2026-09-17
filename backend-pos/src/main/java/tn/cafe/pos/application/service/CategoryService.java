@@ -18,7 +18,7 @@ public class CategoryService {
         repo.findByNom(req.nom().strip()).ifPresent(c -> {
             throw new BusinessException("Catégorie déjà existante : " + req.nom());
         });
-        return repo.save(Category.creer(req.nom(), req.description(), req.ordre()));
+        return repo.save(Category.creer(req.nom(), req.description(), req.ordre(), req.imageUrl()));
     }
 
     public Category modifier(String id, CategoryRequest req) {
@@ -26,6 +26,7 @@ public class CategoryService {
         c.renommer(req.nom());
         c.setDescription(req.description());
         c.setOrdre(req.ordre());
+        c.setImageUrl(req.imageUrl());
         return repo.save(c);
     }
 

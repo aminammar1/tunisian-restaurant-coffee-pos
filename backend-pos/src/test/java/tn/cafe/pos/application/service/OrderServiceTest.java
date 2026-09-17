@@ -63,4 +63,14 @@ class OrderServiceTest {
         assertEquals(OrderStatus.EN_PREPARATION, service.changerStatut("o1", OrderStatus.EN_PREPARATION).getStatut());
         assertEquals(OrderStatus.ANNULEE, service.annuler("o1").getStatut());
     }
+
+    @Test
+    void changerStatut_ne_peut_pas_marquer_payee_sans_paiement() {
+        Order o = Order.creer(List.of(new OrderItem("p1", "Espresso", new BigDecimal("2.5"), 1)), null);
+        o.setId("o1");
+        when(commandes.findById("o1")).thenReturn(Optional.of(o));
+
+        assertThrows(IllegalStateException.class, () -> service.changerStatut("o1", OrderStatus.PAYEE));
+        verify(commandes, never()).save(any());
+    }
 }

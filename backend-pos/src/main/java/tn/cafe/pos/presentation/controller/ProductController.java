@@ -4,10 +4,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
-import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import tn.cafe.pos.application.dto.AvailabilityRequest;
 import tn.cafe.pos.application.dto.ProductRequest;
 import tn.cafe.pos.application.service.ProductService;
 import tn.cafe.pos.domain.model.Product;
@@ -46,8 +46,8 @@ public class ProductController {
 
     @PatchMapping("/{id}/disponibilite")
     @Operation(summary = "Disponible / indisponible (gérant)")
-    public Product dispo(@PathVariable String id, @RequestBody Map<String, Boolean> body) {
-        return service.changerDisponibilite(id, Boolean.TRUE.equals(body.get("disponible")));
+    public Product dispo(@PathVariable String id, @Valid @RequestBody AvailabilityRequest req) {
+        return service.changerDisponibilite(id, req.disponible());
     }
 
     @DeleteMapping("/{id}")

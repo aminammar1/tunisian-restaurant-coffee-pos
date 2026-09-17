@@ -33,7 +33,6 @@ public class SecurityConfig {
                         "/v3/api-docs/**", "/actuator/health").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/categories/**", "/api/v1/products/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/orders", "/api/v1/payments/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/tickets/**").permitAll()
                 .anyRequest().authenticated())
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
             .build();

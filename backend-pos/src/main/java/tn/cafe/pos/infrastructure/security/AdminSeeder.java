@@ -35,6 +35,7 @@ public class AdminSeeder implements CommandLineRunner {
                 encoder.encode(props.admin().pin()),
                 qrKey, Role.GERANT, true, java.time.Instant.now());
         users.save(admin);
-        log.info("Compte gérant créé : {} / PIN **** / QR={}", username, qrKey);
+        // Never print a reusable QR credential in a terminal log.
+        log.info("[auth] manager account '{}' created (PIN and QR credentials are configured securely)", username);
     }
 }

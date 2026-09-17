@@ -33,7 +33,9 @@ public class Order {
     }
 
     public static BigDecimal calculerTotal(List<OrderItem> items) {
-        return items.stream().map(OrderItem::sousTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal total = BigDecimal.ZERO;
+        for (OrderItem item : items) total = total.add(item.sousTotal());
+        return total;
     }
 
     public void confirmer() {
@@ -53,7 +55,28 @@ public class Order {
 
     public void changerStatut(OrderStatus next) {
         if (next == null) throw new IllegalArgumentException("statut requis");
+        if (next == OrderStatus.PAYEE) {
+            throw new IllegalStateException("seul le paiement peut marquer une commande payée");
+        }
+        if (next == OrderStatus.ANNULEE) {
+            throw new IllegalStateException("utilisez l'annulation pour annuler une commande");
+        }
+        if (statut == OrderStatus.PAYEE || statut == OrderStatus.ANNULEE) {
+            throw new IllegalStateException("commande terminée : statut non modifiable");
+        }
+        if (!transitionAutorisee(statut, next)) {
+            throw new IllegalStateException("transition de statut invalide : " + statut + " vers " + next);
+        }
         this.statut = next;
+    }
+
+    private static boolean transitionAutorisee(OrderStatus current, OrderStatus next) {
+        return switch (current) {
+            case EN_ATTENTE -> next == OrderStatus.CONFIRMEE || next == OrderStatus.EN_PREPARATION;
+            case CONFIRMEE -> next == OrderStatus.EN_PREPARATION;
+            case EN_PREPARATION -> next == OrderStatus.PRETE;
+            case PRETE, PAYEE, ANNULEE -> false;
+        };
     }
 
     public String getId() { return id; }

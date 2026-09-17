@@ -18,7 +18,8 @@
 - `BackendPosApplicationTests` is intentionally NOT `@SpringBootTest` (avoids needing Mongo). Do not re-add `@SpringBootTest` without a test DB.
 
 ## Env / config gotchas
-- `src/main/resources/application.properties` reads env vars with local defaults; Spring does NOT load `.env` (no dotenv lib). Export vars in shell or pass `-Dspring.data.mongodb.uri=...` when running tests/app.
+- `src/main/resources/application.properties` reads env vars with local defaults; `backend-pos/.env` is auto-loaded at boot via `springboot4-dotenv:5.1.0` (registered in `META-INF/spring/...EnvironmentPostProcessor.imports`, because the jar only ships legacy `spring.factories` which Boot 4 ignores). No shell export needed.
+- Boot 4 renamed Mongo connection props: use `spring.mongodb.uri` / `spring.mongodb.database` (NOT `spring.data.mongodb.*` — that prefix is dead for connections; `spring.data.mongodb.auto-index-creation` is still valid).
 - Template: `backend-pos/.env.example`. Real `backend-pos/.env` holds an Atlas URI + a generated JWT secret.
 - `.env` (Atlas URI + JWT secret) is git-ignored at root and in `backend-pos/`. Never force-add it.
 - Atlas DB name is the URI path segment (`...mongodb.net/pos_tunisie?...`) plus `MONGODB_DATABASE=pos_tunisie`.

@@ -10,6 +10,7 @@ public class CategoryDocument {
     @Id public String id;
     @Indexed(unique = true) public String nom;
     public String description;
+    public String imageUrl;
     public int ordre;
     public boolean active;
     public Instant creeLe;

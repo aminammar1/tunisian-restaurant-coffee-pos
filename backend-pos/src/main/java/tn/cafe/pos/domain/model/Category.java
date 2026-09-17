@@ -7,21 +7,31 @@ public class Category {
     private String id;
     private String nom;
     private String description;
+    private String imageUrl;
     private int ordre;
     private boolean active;
     private Instant creeLe;
 
     public Category(String id, String nom, String description, int ordre, boolean active, Instant creeLe) {
+        this(id, nom, description, ordre, active, null, creeLe);
+    }
+
+    public Category(String id, String nom, String description, int ordre, boolean active, String imageUrl, Instant creeLe) {
         setNom(nom);
         this.id = id;
         this.description = description;
+        this.imageUrl = imageUrl;
         this.ordre = Math.max(0, ordre);
         this.active = active;
         this.creeLe = creeLe != null ? creeLe : Instant.now();
     }
 
+    public static Category creer(String nom, String description, int ordre, String imageUrl) {
+        return new Category(null, nom, description, ordre, true, imageUrl, Instant.now());
+    }
+
     public static Category creer(String nom, String description, int ordre) {
-        return new Category(null, nom, description, ordre, true, Instant.now());
+        return creer(nom, description, ordre, null);
     }
 
     public void renommer(String nom) { setNom(nom); }
@@ -36,6 +46,8 @@ public class Category {
     public String getNom() { return nom; }
     public String getDescription() { return description; }
     public void setDescription(String d) { this.description = d; }
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     public int getOrdre() { return ordre; }
     public void setOrdre(int o) { this.ordre = Math.max(0, o); }
     public boolean isActive() { return active; }
