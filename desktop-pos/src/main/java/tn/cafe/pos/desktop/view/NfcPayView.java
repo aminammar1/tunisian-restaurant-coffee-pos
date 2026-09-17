@@ -85,7 +85,11 @@ public class NfcPayView extends BorderPane {
     }
 
     private void confirmer(Router router, Order order) {
-        if (order == null) { status.setText(I18n.t("nfc.noOrder")); return; }
+        if (order == null) {
+            status.setText(I18n.t("nfc.noOrder"));
+            Ui.toastError(this, I18n.t("nfc.noOrder"));
+            return;
+        }
         var t = new Task<Map<String, Object>>() {
             @Override protected Map<String, Object> call() throws Exception {
                 return ApiClient.get().postMap("/payments/proximite", Map.of("commandeId", order.id(), "signalDetecte", true));
@@ -94,9 +98,15 @@ public class NfcPayView extends BorderPane {
                 Platform.runLater(() -> router.go(Router.Route.TICKET, getValue()));
             }
             @Override protected void failed() {
-                Platform.runLater(() -> status.setText(I18n.t("nfc.failed", Ui.friendlyError(getException()))));
+                Platform.runLater(() -> {
+                    String err = Ui.essentialError(getException());
+                    status.setText(err);
+                    Ui.toastError(NfcPayView.this, err);
+                });
             }
         };
-        new Thread(t, "pay-nfc").start();
+        var thread = new Thread(t, "pay-nfc");
+        thread.setDaemon(true);
+        thread.start();
     }
 }

@@ -30,6 +30,7 @@ public class TicketPreviewView extends BorderPane {
         String clientTxt = "—";
         String header = I18n.t("payment.choose");
         boolean pendingPayment = false;
+        boolean justPaid = false;
 
         if (p instanceof Map<?, ?> response && response.get("tickets") instanceof List<?> tickets) {
             for (Object value : tickets) {
@@ -43,6 +44,7 @@ public class TicketPreviewView extends BorderPane {
                 }
             }
             header = I18n.t("ticket.paid");
+            justPaid = true;
             CartStore.get().clear();
         } else if (p instanceof Order o) {
             header = I18n.t("ticket.pending", o.numero());
@@ -51,10 +53,17 @@ public class TicketPreviewView extends BorderPane {
             pendingPayment = true;
         } else if (p instanceof PaymentView.PayCtx ctx) {
             header = I18n.t("ticket.demo", ctx.type());
+            justPaid = true;
             if (ctx.order() != null) { clientTxt = previewLocal(ctx.order()); serviceTxt = previewService(ctx.order()); }
             CartStore.get().clear();
         }
         final boolean paymentPending = pendingPayment;
+        if (justPaid) {
+            // Deferred one pulse: the view has a scene by then, so the toast
+            // uses a window popup instead of the inline fallback.
+            String paidHeader = header;
+            javafx.application.Platform.runLater(() -> Ui.toastSuccess(TicketPreviewView.this, paidHeader));
+        }
 
         var center = new FlowPane();
         center.setHgap(20);

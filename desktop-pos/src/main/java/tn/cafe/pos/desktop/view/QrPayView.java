@@ -92,7 +92,11 @@ public class QrPayView extends BorderPane implements ViewLifecycle {
     }
 
     private void confirmer(Router router, Order order, String code) {
-        if (order == null) { status.setText(I18n.t("qr.noOrder")); return; }
+        if (order == null) {
+            status.setText(I18n.t("qr.noOrder"));
+            Ui.toastError(this, I18n.t("qr.noOrder"));
+            return;
+        }
         status.setText(I18n.t("qr.confirming", code.isBlank() ? "none" : code));
         var t = new Task<Map<String, Object>>() {
             @Override protected Map<String, Object> call() throws Exception {
@@ -102,10 +106,16 @@ public class QrPayView extends BorderPane implements ViewLifecycle {
                 Platform.runLater(() -> { scanner.stop(); router.go(Router.Route.TICKET, getValue()); });
             }
             @Override protected void failed() {
-                Platform.runLater(() -> status.setText(I18n.t("qr.failed", Ui.friendlyError(getException()))));
+                Platform.runLater(() -> {
+                    String err = Ui.essentialError(getException());
+                    status.setText(err);
+                    Ui.toastError(QrPayView.this, err);
+                });
             }
         };
-        new Thread(t, "pay-qr").start();
+        var thread = new Thread(t, "pay-qr");
+        thread.setDaemon(true);
+        thread.start();
     }
 
     /** Called when navigating away — best effort camera release. */

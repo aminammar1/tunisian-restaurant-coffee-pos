@@ -163,14 +163,25 @@ public class AdminLoginView extends BorderPane implements ViewLifecycle {
             @Override protected void succeeded() {
                 Map<String, Object> r = getValue();
                 String token = String.valueOf(r.getOrDefault("token", ""));
-                AuthSession.get().set(token, String.valueOf(r.getOrDefault("username", "gerant")), String.valueOf(r.getOrDefault("role", "GERANT")));
-                Platform.runLater(() -> { scanner.stop(); router.go(Router.Route.ADMIN_DASH); });
+                String username = String.valueOf(r.getOrDefault("username", "gerant"));
+                AuthSession.get().set(token, username, String.valueOf(r.getOrDefault("role", "GERANT")));
+                Platform.runLater(() -> {
+                    scanner.stop();
+                    Ui.toastSuccess(AdminLoginView.this, I18n.t("dashboard.connected", username));
+                    router.go(Router.Route.ADMIN_DASH);
+                });
             }
             @Override protected void failed() {
-                Platform.runLater(() -> target.setText(I18n.t("login.failed", Ui.friendlyError(getException()))));
+                Platform.runLater(() -> {
+                    String err = Ui.essentialError(getException());
+                    target.setText(err);
+                    Ui.toastError(AdminLoginView.this, err);
+                });
             }
         };
-        new Thread(t, "admin-login").start();
+        var thread = new Thread(t, "admin-login");
+        thread.setDaemon(true);
+        thread.start();
     }
 
     @Override public void dispose() { scanner.stop(); }

@@ -87,7 +87,11 @@ public class CartView extends BorderPane {
     }
 
     private void commander(boolean thenPay) {
-        if (CartStore.get().isEmpty()) { status.setText(I18n.t("cart.empty")); return; }
+        if (CartStore.get().isEmpty()) {
+            status.setText(I18n.t("cart.empty"));
+            Ui.toastError(this, I18n.t("cart.empty"));
+            return;
+        }
         status.setText(I18n.t("cart.sending"));
         var payload = Map.of("items", CartStore.get().toOrderItems(),
                 "tableOuClient", table.getText().isBlank() ? I18n.t("cart.counter") : table.getText());
@@ -100,14 +104,21 @@ public class CartView extends BorderPane {
                 Order o = getValue();
                 Platform.runLater(() -> {
                     status.setText(I18n.t("cart.created", o.numero()));
+                    Ui.toastSuccess(CartView.this, I18n.t("cart.created", o.numero()));
                     if (thenPay) router.go(Router.Route.PAYMENT, o);
                     else { CartStore.get().clear(); router.go(Router.Route.TICKET, o); }
                 });
             }
             @Override protected void failed() {
-                Platform.runLater(() -> status.setText(I18n.t("cart.unavailable", Ui.friendlyError(getException()))));
+                Platform.runLater(() -> {
+                    String err = Ui.essentialError(getException());
+                    status.setText(err);
+                    Ui.toastError(CartView.this, err);
+                });
             }
         };
-        new Thread(t, "order-create").start();
+        var thread = new Thread(t, "order-create");
+        thread.setDaemon(true);
+        thread.start();
     }
 }

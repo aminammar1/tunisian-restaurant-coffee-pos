@@ -74,6 +74,29 @@ public final class Ui {
     }
 
     /**
+     * The message an admin (not an IT dev) should see: backend {@code erreur}
+     * text as-is, a plain "server unreachable" for connection failures, and the
+     * friendly fallback otherwise. Pure function (unit-tested).
+     */
+    public static String essentialError(Throwable ex) {
+        if (ex != null) {
+            for (Throwable r = ex; r != null; r = r.getCause()) {
+                if (r instanceof java.net.ConnectException
+                        || r instanceof java.net.http.HttpConnectTimeoutException
+                        || r instanceof java.net.UnknownHostException) {
+                    return safe(I18n.t("common.offline"));
+                }
+                String m = r.getMessage();
+                if (m != null && (m.contains("Connection refused") || m.contains("Connection reset")
+                        || m.contains("timed out") || m.contains("unreachable"))) {
+                    return safe(I18n.t("common.offline"));
+                }
+            }
+        }
+        return friendlyError(ex);
+    }
+
+    /**
      * Parses a typed price: trims, accepts comma or dot decimals, ignores grouping
      * spaces ("1 000" → 1000). Empty unless the value is a valid non-negative number.
      * Pure function (unit-tested, no toolkit needed).
@@ -362,23 +385,41 @@ public final class Ui {
     }
 
     public static void toast(javafx.scene.layout.Pane root, String msg) {
-        var text = safe(msg);
+        showToast(root, msg, "toast", 2.5);
+    }
+
+    /** Green success toast, Next.js style. Window-level: survives navigation. */
+    public static void toastSuccess(javafx.scene.layout.Pane root, String msg) {
+        showToast(root, msg, "toast-success", 2.5);
+    }
+
+    /** Red error toast with the essential (non-technical) message. Stays longer. */
+    public static void toastError(javafx.scene.layout.Pane root, String msg) {
+        showToast(root, msg, "toast-error", 4.0);
+    }
+
+    private static final java.util.concurrent.atomic.AtomicInteger ACTIVE_TOASTS = new java.util.concurrent.atomic.AtomicInteger();
+
+    private static void showToast(javafx.scene.layout.Pane root, String msg, String cls, double seconds) {
+        String text = safe(msg);
         if (text.isBlank()) return;
-        var label = new Label(text);
-        label.getStyleClass().add("toast");
-        label.setWrapText(false);
-        label.setTextOverrun(OverrunStyle.ELLIPSIS);
-        label.setMaxWidth(480);
+        var label = oneLine(text, cls);
+        label.setMaxWidth(520);
         try {
             var scene = root.getScene();
             if (scene != null && scene.getWindow() != null) {
+                var win = scene.getWindow();
                 var pop = new Popup();
                 pop.getContent().add(label);
                 pop.setAutoHide(true);
                 pop.setAutoFix(true);
-                pop.show(scene.getWindow());
-                var hide = new PauseTransition(Duration.seconds(2.5));
-                hide.setOnFinished(e -> pop.hide());
+                int slot = ACTIVE_TOASTS.getAndIncrement();
+                double w = 520;
+                double x = win.getX() + Math.max(0, (win.getWidth() - w) / 2);
+                double y = win.getY() + Math.max(60, win.getHeight() - 110 - (slot % 3) * 58);
+                pop.show(win, x, y);
+                var hide = new PauseTransition(Duration.seconds(seconds));
+                hide.setOnFinished(e -> { pop.hide(); ACTIVE_TOASTS.decrementAndGet(); });
                 hide.play();
                 return;
             }

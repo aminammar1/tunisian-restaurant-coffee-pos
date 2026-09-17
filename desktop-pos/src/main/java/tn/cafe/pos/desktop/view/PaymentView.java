@@ -82,6 +82,7 @@ public class PaymentView extends BorderPane {
     private void confirmer(Router router, Order order, String type) {
         if (order == null) {
             status.setText(I18n.t("payment.needOrder"));
+            Ui.toastError(this, I18n.t("payment.needOrder"));
             return;
         }
         status.setText(I18n.t("payment.creating", type));
@@ -96,7 +97,11 @@ public class PaymentView extends BorderPane {
             }
 
             @Override protected void failed() {
-                Platform.runLater(() -> status.setText(I18n.t("payment.failed", Ui.friendlyError(getException()))));
+                Platform.runLater(() -> {
+                    String err = Ui.essentialError(getException());
+                    status.setText(err);
+                    Ui.toastError(PaymentView.this, err);
+                });
             }
         };
         Thread worker = new Thread(task, "pay-" + type.toLowerCase());

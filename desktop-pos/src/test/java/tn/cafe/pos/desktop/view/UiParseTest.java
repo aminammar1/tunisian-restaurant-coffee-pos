@@ -43,6 +43,18 @@ class UiParseTest {
     }
 
     @Test
+    void essentialErrorMapsOffline() {
+        tn.cafe.pos.desktop.core.i18n.I18n.set(tn.cafe.pos.desktop.core.i18n.I18n.Language.EN);
+        assertEquals("Server unreachable. Start the backend and retry.",
+                Ui.essentialError(new java.net.ConnectException("Connection refused")));
+        assertEquals("Server unreachable. Start the backend and retry.",
+                Ui.essentialError(new RuntimeException("x", new java.net.UnknownHostException("api"))));
+        assertEquals("commande terminée", Ui.essentialError(
+                new tn.cafe.pos.desktop.core.api.ApiClient.ApiException(400, "{\"erreur\":\"commande terminée\"}")));
+        tn.cafe.pos.desktop.core.i18n.I18n.set(tn.cafe.pos.desktop.core.i18n.I18n.Language.EN);
+    }
+
+    @Test
     void acceptsBlankOrHttpUrlsOnly() {
         assertTrue(Ui.isWebImageUrlOk(null));
         assertTrue(Ui.isWebImageUrlOk(""));

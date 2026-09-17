@@ -144,17 +144,25 @@ public class AdminDashboardView extends BorderPane implements ViewLifecycle {
                 });
             }
             @Override protected void failed() {
-                Platform.runLater(() -> feed.getItems().add(0, I18n.t("dashboard.loadFailed", Ui.friendlyError(getException()))));
+                Platform.runLater(() -> {
+                    String err = Ui.essentialError(getException());
+                    feed.getItems().add(0, err);
+                    Ui.toastError(AdminDashboardView.this, err);
+                });
             }
         };
-        new Thread(t, "orders-load").start();
+        var thread = new Thread(t, "orders-load");
+        thread.setDaemon(true);
+        thread.start();
     }
 
     private void changerStatut(StatusOption statut) {
         int index = ordersList.getSelectionModel().getSelectedIndex();
         if (index < 0 || index >= cache.length || statut == null) return;
         if (isTerminal(cache[index])) {
-            feed.getItems().add(0, Ui.safe(I18n.t("dashboard.statusLocked")));
+            String locked = Ui.safe(I18n.t("dashboard.statusLocked"));
+            feed.getItems().add(0, locked);
+            Ui.toastError(this, locked);
             return;
         }
         String id = cache[index].id();
@@ -162,17 +170,32 @@ public class AdminDashboardView extends BorderPane implements ViewLifecycle {
             @Override protected Order call() throws Exception {
                 return ApiClient.get().patch("/orders/" + id + "/statut", java.util.Map.of("statut", statut.api()), Order.class);
             }
-            @Override protected void succeeded() { Platform.runLater(() -> load()); }
-            @Override protected void failed() { Platform.runLater(() -> feed.getItems().add(0, I18n.t("dashboard.statusFailed", Ui.friendlyError(getException())))); }
+            @Override protected void succeeded() {
+                Platform.runLater(() -> {
+                    Ui.toastSuccess(AdminDashboardView.this, I18n.t("dashboard.statusUpdated"));
+                    load();
+                });
+            }
+            @Override protected void failed() {
+                Platform.runLater(() -> {
+                    String err = Ui.essentialError(getException());
+                    feed.getItems().add(0, err);
+                    Ui.toastError(AdminDashboardView.this, err);
+                });
+            }
         };
-        new Thread(t, "order-status").start();
+        var thread = new Thread(t, "order-status");
+        thread.setDaemon(true);
+        thread.start();
     }
 
     private void annuler() {
         int index = ordersList.getSelectionModel().getSelectedIndex();
         if (index < 0 || index >= cache.length) return;
         if (isTerminal(cache[index])) {
-            feed.getItems().add(0, Ui.safe(I18n.t("dashboard.statusLocked")));
+            String locked = Ui.safe(I18n.t("dashboard.statusLocked"));
+            feed.getItems().add(0, locked);
+            Ui.toastError(this, locked);
             return;
         }
         String id = cache[index].id();
@@ -180,10 +203,23 @@ public class AdminDashboardView extends BorderPane implements ViewLifecycle {
             @Override protected Order call() throws Exception {
                 return ApiClient.get().post("/orders/" + id + "/annuler", null, Order.class);
             }
-            @Override protected void succeeded() { Platform.runLater(() -> load()); }
-            @Override protected void failed() { Platform.runLater(() -> feed.getItems().add(0, I18n.t("dashboard.cancelFailed", Ui.friendlyError(getException())))); }
+            @Override protected void succeeded() {
+                Platform.runLater(() -> {
+                    Ui.toastSuccess(AdminDashboardView.this, I18n.t("dashboard.cancelled"));
+                    load();
+                });
+            }
+            @Override protected void failed() {
+                Platform.runLater(() -> {
+                    String err = Ui.essentialError(getException());
+                    feed.getItems().add(0, err);
+                    Ui.toastError(AdminDashboardView.this, err);
+                });
+            }
         };
-        new Thread(t, "order-cancel").start();
+        var thread = new Thread(t, "order-cancel");
+        thread.setDaemon(true);
+        thread.start();
     }
 
     @Override public void dispose() { sse.stop(); }

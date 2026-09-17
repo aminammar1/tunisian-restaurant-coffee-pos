@@ -89,6 +89,8 @@
 .scroll-bar .thumb { -fx-background-color: #cfc0bd; -fx-background-radius: 8; }
 .ticket-text { -fx-font-family: "Noto Sans Mono", "Noto Sans Arabic", "DejaVu Sans Mono", monospace; -fx-font-size: 12px; -fx-text-fill: #211a1b; }
 .toast { -fx-background-color: #c8102e; -fx-text-fill: white; -fx-font-size: 13px; -fx-padding: 12 20; -fx-background-radius: 8; }
+.toast-success { -fx-background-color: #1e8e4d; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-padding: 12 20; -fx-background-radius: 8; -fx-effect: dropshadow(gaussian, rgba(20,60,35,.35), 12, 0, 0, 3); }
+.toast-error { -fx-background-color: #c8102e; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-padding: 12 20; -fx-background-radius: 8; -fx-effect: dropshadow(gaussian, rgba(120,10,25,.35), 12, 0, 0, 3); }
 .link { -fx-background-color: transparent; -fx-text-fill: #c8102e; -fx-underline: true; -fx-cursor: hand; }
 .tabs .tab { -fx-font-size: 14px; -fx-font-weight: bold; }
 .tab-pane.tabs > .tab-header-area > .headers-region > .tab:selected { -fx-background-color: #c8102e; -fx-background-radius: 8 8 0 0; }
