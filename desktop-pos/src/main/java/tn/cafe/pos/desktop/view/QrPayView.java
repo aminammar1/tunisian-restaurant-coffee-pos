@@ -58,11 +58,7 @@ public class QrPayView extends BorderPane implements ViewLifecycle {
             else submitPay.run();
         };
 
-        var simulateBtn = Ui.big(I18n.t("login.qr.simulate"), "accent");
-        HBox.setHgrow(simulateBtn, javafx.scene.layout.Priority.ALWAYS);
-        simulateBtn.setOnAction(e -> proximityAction.accept("close"));
-
-        var row = new HBox(12, scanBtn, confirmBtn, simulateBtn);
+        var row = new HBox(12, scanBtn, confirmBtn);
         row.setAlignment(Pos.CENTER);
         row.setMaxWidth(480);
 
