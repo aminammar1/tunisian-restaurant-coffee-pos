@@ -78,6 +78,16 @@ jobs:
           cp ../backend-pos/target/backend-pos-*.jar target/installer-input/
           mkdir -p ../dist
 
+      - name: Ensure WiX Toolset on PATH (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $wix314 = 'C:\Program Files (x86)\WiX Toolset v3.14\bin'
+          $wix311 = 'C:\Program Files (x86)\WiX Toolset v3.11\bin'
+          if (Test-Path $wix314) { Add-Content $env:GITHUB_PATH $wix314 }
+          elseif (Test-Path $wix311) { Add-Content $env:GITHUB_PATH $wix311 }
+          else { Write-Host 'WiX not found at standard paths, relying on preinstalled PATH'; Get-Command candle.exe -ErrorAction SilentlyContinue | Format-List }
+
       - name: Build native installer
         shell: bash
         run: |
@@ -107,18 +117,39 @@ jobs:
           else
             echo "No jmods in JAVA_HOME, falling back to jpackage default runtime"
           fi
+          # Professional Windows wizard (exe only): directory chooser, license
+          # page, Start Menu + Desktop shortcuts, stable upgrade UUID so
+          # v1 -> v2 upgrades replace instead of installing side-by-side.
+          # Per-machine install (Program Files, UAC prompt) is intentional
+          # for a shared café till. These flags are Windows-only and must
+          # stay out of the Linux/macOS jpackage calls.
+          WIN_ARGS=()
+          if [[ "${{ matrix.os }}" == windows-* ]]; then
+            WIN_ARGS=(
+              --win-dir-chooser
+              --win-menu
+              --win-menu-group "POS Tunisie"
+              --win-shortcut
+              --win-shortcut-prompt
+              --win-upgrade-uuid "e8b6f0a2-7c4d-4f8e-b3a1-9d2c5e6f7a8b"
+              --win-help-url "https://github.com/aminammar1/tunisian-restaurant-coffee-pos"
+            )
+          fi
           jpackage \
             --type "${{ matrix.type }}" \
             --name POS-Tunisie \
             --app-version "$RAW" \
-            --vendor "POS Tunisie" \
+            --vendor "Mohamed Amine Ammar" \
+            --copyright "Copyright (c) 2026 Mohamed Amine Ammar" \
             --description "POS Tunisie cafe and restaurant point of sale" \
+            --license-file ../LICENSE \
             --input target/installer-input \
             --main-jar "$(basename target/desktop-pos-*.jar)" \
             --main-class tn.cafe.pos.desktop.StandalonePosLauncher \
             --icon "${{ matrix.icon }}" \
             --dest ../dist \
             "${RUNTIME_ARGS[@]}" \
+            "${WIN_ARGS[@]}" \
             --java-options "--enable-native-access=ALL-UNNAMED"
           # Portable Linux folder (for Arch and other non-deb distros):
           # jpackage app-image needs no dpkg/rpm, runs anywhere with the
@@ -128,8 +159,10 @@ jobs:
               --type app-image \
               --name POS-Tunisie \
               --app-version "$RAW" \
-              --vendor "POS Tunisie" \
+              --vendor "Mohamed Amine Ammar" \
+              --copyright "Copyright (c) 2026 Mohamed Amine Ammar" \
               --description "POS Tunisie cafe and restaurant point of sale" \
+              --license-file ../LICENSE \
               --input target/installer-input \
               --main-jar "$(basename target/desktop-pos-*.jar)" \
               --main-class tn.cafe.pos.desktop.StandalonePosLauncher \

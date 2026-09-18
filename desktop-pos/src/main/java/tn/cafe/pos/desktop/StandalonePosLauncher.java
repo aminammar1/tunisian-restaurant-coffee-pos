@@ -10,7 +10,14 @@ import java.time.Duration;
 import java.util.HexFormat;
 import java.util.List;
 
-/** Starts the bundled local MongoDB and Spring Boot API before opening JavaFX. */
+/** Starts the bundled local MongoDB and Spring Boot API before opening JavaFX.
+ *
+ * <p>On Windows the jpackage launcher is a GUI app with no console, so this class
+ * shows an immediate Swing splash window with startup progress. Without it the app
+ * looks like it is "just running in the background" for 15-30s while MongoDB and
+ * the API boot, and any failure dies silently. All failures now pop a dialog with
+ * the log paths instead.</p>
+ */
 public final class StandalonePosLauncher {
     private static final int MONGO_PORT = 27018;
     private static final int API_PORT = 18080;
@@ -19,24 +26,39 @@ public final class StandalonePosLauncher {
     private StandalonePosLauncher() {}
 
     public static void main(String[] args) throws Exception {
-        Path appDir = appDirectory();
-        Path dataDir = Path.of(System.getProperty("user.home"), ".pos-tunisie", "mongodb-data");
-        Path logDir = dataDir.getParent().resolve("logs");
-        Files.createDirectories(dataDir);
-        Files.createDirectories(logDir);
-
-        Process mongo = startMongo(appDir, dataDir, logDir);
+        Splash splash = Splash.show();
+        Path logDirHint = Path.of(System.getProperty("user.home"), ".pos-tunisie", "logs");
+        Process mongo = null;
         Process backend = null;
         try {
-            waitForPort("127.0.0.1", MONGO_PORT, Duration.ofSeconds(45));
+            splash.status("Preparing local data folder...");
+            Path appDir = appDirectory();
+            Path dataDir = Path.of(System.getProperty("user.home"), ".pos-tunisie", "mongodb-data");
+            Path logDir = dataDir.getParent().resolve("logs");
+            logDirHint = logDir;
+            Files.createDirectories(dataDir);
+            Files.createDirectories(logDir);
+
+            splash.status("Starting local database (MongoDB)...");
+            mongo = startMongo(appDir, dataDir, logDir);
+            waitForPort("127.0.0.1", MONGO_PORT, Duration.ofSeconds(45), mongo, logDir);
+
+            splash.status("Starting local API...");
             Path backendJar = findRequired(appDir, "backend-pos-", ".jar");
             String jwtSecret = localSecret();
             backend = startBackend(backendJar, logDir, jwtSecret);
-            waitForApi(Duration.ofSeconds(60));
+            waitForApi(Duration.ofSeconds(90), backend, logDir);
+
+            splash.status("Opening POS...");
             Process backendProcess = backend;
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> stop(backendProcess, mongo), "pos-shutdown"));
+            Process mongoProcess = mongo;
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> stop(backendProcess, mongoProcess), "pos-shutdown"));
             System.setProperty("pos.apiBase", API_BASE);
+            splash.close();
             DesktopPosApp.main(args);
+        } catch (Exception failure) {
+            splash.fail(logDirHint, failure);
+            throw failure;
         } finally {
             stop(backend, mongo);
         }
@@ -45,10 +67,15 @@ public final class StandalonePosLauncher {
     private static Process startMongo(Path appDir, Path dataDir, Path logDir) throws IOException {
         Path binary = findRequired(appDir, "mongod", isWindows() ? ".exe" : "");
         if (!isWindows()) binary.toFile().setExecutable(true);
+        // Merge stdout+stderr into a file: an unread pipe can block the child and,
+        // on Windows, a silent mongod crash (e.g. missing VC++ redist) would otherwise
+        // leave zero diagnostics. --logpath already captures mongod logs too.
         return new ProcessBuilder(List.of(binary.toString(), "--dbpath", dataDir.toString(),
                 "--port", String.valueOf(MONGO_PORT), "--bind_ip", "127.0.0.1",
                 "--logpath", logDir.resolve("mongodb.log").toString(), "--logappend", "--quiet"))
-                .redirectErrorStream(true).start();
+                .redirectErrorStream(true)
+                .redirectOutput(ProcessBuilder.Redirect.appendTo(logDir.resolve("mongod-stdout.log").toFile()))
+                .start();
     }
 
     private static Process startBackend(Path jar, Path logDir, String jwtSecret) throws IOException {
@@ -64,9 +91,13 @@ public final class StandalonePosLauncher {
                 .start();
     }
 
-    private static void waitForApi(Duration timeout) throws Exception {
+    private static void waitForApi(Duration timeout, Process backend, Path logDir) throws Exception {
         long deadline = System.nanoTime() + timeout.toNanos();
         while (System.nanoTime() < deadline) {
+            if (backend != null && !backend.isAlive() && backend.exitValue() != 0) {
+                throw new IOException("Local POS API exited early (code " + backend.exitValue()
+                        + "). See " + logDir.resolve("backend.log"));
+            }
             try {
                 HttpURLConnection connection = (HttpURLConnection) URI.create(API_BASE + "/categories").toURL().openConnection();
                 connection.setConnectTimeout(1000);
@@ -75,16 +106,23 @@ public final class StandalonePosLauncher {
             } catch (IOException ignored) {}
             Thread.sleep(250);
         }
-        throw new IOException("Local POS API did not start. See ~/.pos-tunisie/logs/backend.log");
+        throw new IOException("Local POS API did not start within " + timeout.toSeconds()
+                + "s. See " + logDir.resolve("backend.log"));
     }
 
-    private static void waitForPort(String host, int port, Duration timeout) throws Exception {
+    private static void waitForPort(String host, int port, Duration timeout, Process watched, Path logDir) throws Exception {
         long deadline = System.nanoTime() + timeout.toNanos();
         while (System.nanoTime() < deadline) {
+            if (watched != null && !watched.isAlive() && watched.exitValue() != 0) {
+                throw new IOException("Local MongoDB exited early (code " + watched.exitValue()
+                        + "). See " + logDir.resolve("mongodb.log")
+                        + " — on a fresh Windows PC install the Microsoft Visual C++ Redistributable if mongod is missing DLLs.");
+            }
             try (var socket = new java.net.Socket(host, port)) { return; }
             catch (IOException ignored) { Thread.sleep(250); }
         }
-        throw new IOException("Local MongoDB did not start. See ~/.pos-tunisie/logs/mongodb.log");
+        throw new IOException("Local MongoDB did not start within " + timeout.toSeconds()
+                + "s. See " + logDir.resolve("mongodb.log"));
     }
 
     private static Path appDirectory() throws Exception {
@@ -135,6 +173,89 @@ public final class StandalonePosLauncher {
     }
 
     private static boolean isWindows() { return System.getProperty("os.name").startsWith("Windows"); }
+
+    /**
+     * Immediate startup window so the Windows install never looks like a silent
+     * background process. Shown on the Swing EDT before MongoDB boots, updated as
+     * each stage starts, closed right before the JavaFX window opens. Headless-safe
+     * (tests/servers get a no-op).
+     */
+    private static final class Splash {
+        private final javax.swing.JFrame frame;
+        private final javax.swing.JLabel status;
+
+        private Splash(javax.swing.JFrame frame, javax.swing.JLabel status) {
+            this.frame = frame;
+            this.status = status;
+        }
+
+        static Splash show() {
+            if (java.awt.GraphicsEnvironment.isHeadless()) {
+                return new Splash(null, null);
+            }
+            javax.swing.JLabel statusLabel = new javax.swing.JLabel("Starting...", javax.swing.SwingConstants.CENTER);
+            javax.swing.JFrame frame = new javax.swing.JFrame("POS Tunisie — Starting...");
+            // Build on EDT but don't block the launcher thread.
+            try {
+                javax.swing.SwingUtilities.invokeAndWait(() -> {
+                    frame.setDefaultCloseOperation(javax.swing.JFrame.DO_NOTHING_ON_CLOSE);
+                    var panel = new javax.swing.JPanel(new java.awt.BorderLayout(10, 10));
+                    panel.setBorder(javax.swing.BorderFactory.createEmptyBorder(18, 22, 18, 22));
+                    var title = new javax.swing.JLabel("POS Tunisie", javax.swing.SwingConstants.CENTER);
+                    title.setFont(title.getFont().deriveFont(java.awt.Font.BOLD, 20f));
+                    var sub = new javax.swing.JLabel("Café & Restaurant — starting local services...",
+                            javax.swing.SwingConstants.CENTER);
+                    var bar = new javax.swing.JProgressBar();
+                    bar.setIndeterminate(true);
+                    panel.add(title, java.awt.BorderLayout.NORTH);
+                    panel.add(sub, java.awt.BorderLayout.CENTER);
+                    var bottom = new javax.swing.JPanel(new java.awt.BorderLayout(0, 6));
+                    bottom.add(bar, java.awt.BorderLayout.NORTH);
+                    bottom.add(statusLabel, java.awt.BorderLayout.SOUTH);
+                    panel.add(bottom, java.awt.BorderLayout.SOUTH);
+                    frame.setContentPane(panel);
+                    frame.setSize(420, 180);
+                    frame.setLocationRelativeTo(null);
+                    frame.setAlwaysOnTop(true);
+                    frame.setVisible(true);
+                    frame.toFront();
+                });
+            } catch (Exception ignored) {
+                // Splash is best-effort; startup continues without it.
+            }
+            return new Splash(frame, statusLabel);
+        }
+
+        void status(String text) {
+            if (frame == null || status == null) return;
+            javax.swing.SwingUtilities.invokeLater(() -> {
+                status.setText(text);
+                frame.toFront();
+            });
+        }
+
+        void close() {
+            if (frame == null) return;
+            javax.swing.SwingUtilities.invokeLater(frame::dispose);
+        }
+
+        /** Closes the splash and pops a visible error instead of dying silently. */
+        void fail(Path logDir, Exception failure) {
+            close();
+            String detail = failure.getMessage() == null ? failure.toString() : failure.getMessage();
+            String message = "POS Tunisie could not start.\n\n" + detail
+                    + "\n\nLogs:\n- " + logDir.resolve("backend.log")
+                    + "\n- " + logDir.resolve("mongodb.log");
+            System.err.println(message);
+            failure.printStackTrace();
+            if (java.awt.GraphicsEnvironment.isHeadless()) return;
+            try {
+                javax.swing.SwingUtilities.invokeAndWait(() -> javax.swing.JOptionPane.showMessageDialog(
+                        null, message, "POS Tunisie — startup failed",
+                        javax.swing.JOptionPane.ERROR_MESSAGE));
+            } catch (Exception ignored) {}
+        }
+    }
 
     private static void stop(Process... processes) {
         for (Process process : processes) {
