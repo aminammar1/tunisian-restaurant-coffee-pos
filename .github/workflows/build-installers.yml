@@ -101,6 +101,24 @@ jobs:
             --dest ../dist \
             --java-options "--enable-native-access=javafx.graphics" \
             --java-options "--enable-native-access=ALL-UNNAMED"
+          # Portable Linux folder (for Arch and other non-deb distros):
+          # jpackage app-image needs no dpkg/rpm, runs anywhere with the
+          # bundled runtime. Pack it as tar.gz alongside the .deb.
+          if [[ "${{ matrix.os }}" == ubuntu-* ]]; then
+            jpackage \
+              --type app-image \
+              --name POS-Tunisie \
+              --app-version "$RAW" \
+              --vendor "POS Tunisie" \
+              --description "POS Tunisie cafe and restaurant point of sale" \
+              --input target/installer-input \
+              --main-jar "$(basename target/desktop-pos-*.jar)" \
+              --main-class tn.cafe.pos.desktop.StandalonePosLauncher \
+              --dest ../dist-portable \
+              --java-options "--enable-native-access=javafx.graphics" \
+              --java-options "--enable-native-access=ALL-UNNAMED"
+            tar -czf "../dist/POS-Tunisie-${RAW}-linux-portable.tar.gz" -C ../dist-portable POS-Tunisie
+          fi
 
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
