@@ -1,0 +1,82 @@
+name: Build POS installers
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    name: ${{ matrix.os }} installer
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            type: deb
+            artifact: pos-tunisie-linux
+          - os: windows-2025
+            type: exe
+            artifact: pos-tunisie-windows
+          - os: macos-14
+            type: dmg
+            artifact: pos-tunisie-macos
+
+    defaults:
+      run:
+        working-directory: desktop-pos
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 26
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '26'
+          cache: maven
+
+      - name: Build desktop application
+        run: ./mvnw -q -DskipTests package dependency:copy-dependencies -DoutputDirectory=target/installer-input
+
+      - name: Prepare jpackage input
+        shell: bash
+        run: |
+          cp target/desktop-pos-*.jar target/installer-input/
+          mkdir -p ../dist
+
+      - name: Build native installer
+        shell: bash
+        run: |
+          jpackage \
+            --type "${{ matrix.type }}" \
+            --name POS-Tunisie \
+            --app-version 0.1.0 \
+            --vendor "POS Tunisie" \
+            --description "POS Tunisie cafe and restaurant point of sale" \
+            --input target/installer-input \
+            --main-jar "$(basename target/desktop-pos-*.jar)" \
+            --main-class tn.cafe.pos.desktop.DesktopPosApp \
+            --dest ../dist \
+            --java-options "--enable-native-access=javafx.graphics" \
+            --java-options "--enable-native-access=ALL-UNNAMED"
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/*
+          if-no-files-found: error
+
+      - name: Attach installer to GitHub release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true

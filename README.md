@@ -166,6 +166,18 @@ Or start both services together from the repository root:
 
 The backend unit tests mock MongoDB and therefore do not require a running database. The desktop tests use headless JavaFX smoke checks and do not require a display. Environment files are loaded from `backend-pos/.env` by the configured application startup support.
 
+## Install on another computer
+
+GitHub Actions builds native installers for the desktop client:
+
+- Linux: `.deb`
+- Windows: `.exe`
+- macOS: `.dmg`
+
+To build them, open the **Build POS installers** workflow in GitHub Actions and choose **Run workflow**. For a permanent download, create a version tag such as `v0.1.0`; the workflow attaches the three installers to the GitHub release. The workflow also keeps each installer available as a downloadable artifact.
+
+The installer packages the JavaFX desktop application and its runtime dependencies. The POS API still needs a reachable Spring Boot backend and MongoDB database. By default, the installed client connects to `http://localhost:8080/api/v1`; set `POS_API_BASE` to point it to a shared backend before launching the client.
+
 ### Run with Docker
 
 ```bash
