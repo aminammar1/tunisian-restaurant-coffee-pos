@@ -20,12 +20,15 @@ jobs:
           - os: ubuntu-24.04
             type: deb
             artifact: pos-tunisie-linux
+            icon: assets/pos-tunisie-logo.png
           - os: windows-2025
             type: exe
             artifact: pos-tunisie-windows
+            icon: assets/pos-tunisie-logo.ico
           - os: macos-14
             type: dmg
             artifact: pos-tunisie-macos
+            icon: assets/pos-tunisie-logo.icns
 
     defaults:
       run:
@@ -113,6 +116,7 @@ jobs:
             --input target/installer-input \
             --main-jar "$(basename target/desktop-pos-*.jar)" \
             --main-class tn.cafe.pos.desktop.StandalonePosLauncher \
+            --icon "${{ matrix.icon }}" \
             --dest ../dist \
             "${RUNTIME_ARGS[@]}" \
             --java-options "--enable-native-access=ALL-UNNAMED"
@@ -129,6 +133,7 @@ jobs:
               --input target/installer-input \
               --main-jar "$(basename target/desktop-pos-*.jar)" \
               --main-class tn.cafe.pos.desktop.StandalonePosLauncher \
+              --icon "${{ matrix.icon }}" \
               --dest ../dist-portable \
               "${RUNTIME_ARGS[@]}" \
               --java-options "--enable-native-access=ALL-UNNAMED"

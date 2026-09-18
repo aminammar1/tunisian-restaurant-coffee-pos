@@ -15,6 +15,14 @@ public class DesktopPosApp extends Application {
         var scene = new Scene(router.root(), 1280, 800);
         ThemeManager.apply(scene);
         stage.setTitle("POS Tunisie — Café & Restaurant (Client + Gérant)");
+        try (var in = DesktopPosApp.class.getResourceAsStream("/img/logo.png")) {
+            if (in != null) {
+                var icon = new javafx.scene.image.Image(in);
+                if (!icon.isError()) stage.getIcons().add(icon);
+            }
+        } catch (Exception ignored) {
+            // window simply keeps the default icon
+        }
         stage.setScene(scene);
         stage.show();
     }

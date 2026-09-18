@@ -199,6 +199,32 @@ public final class Ui {
     }
 
     /**
+     * Brand logo (espresso cup on crimson tile) from {@code /img/logo.png}.
+     * Fixed size with preserved ratio; a missing resource yields an empty
+     * region — never breaks layout.
+     */
+    public static Node brandLogo(double size) {
+        var holder = new javafx.scene.layout.StackPane();
+        holder.setMinSize(size, size);
+        holder.setPrefSize(size, size);
+        holder.setMaxSize(size, size);
+        try (var in = Ui.class.getResourceAsStream("/img/logo.png")) {
+            if (in == null) return holder;
+            var img = new javafx.scene.image.Image(in);
+            if (img.isError()) return holder;
+            var view = new javafx.scene.image.ImageView(img);
+            view.setFitWidth(size);
+            view.setFitHeight(size);
+            view.setPreserveRatio(true);
+            view.setSmooth(true);
+            holder.getChildren().add(view);
+        } catch (Exception ignored) {
+            // holder stays empty
+        }
+        return holder;
+    }
+
+    /**
      * Thin Tunisian zellige strip (red band, white eight-point stars) shown under
      * top bars. Tiled from {@code /img/zellige-strip.png}; falls back to a solid
      * red strip when the resource is missing — never breaks layout.
@@ -366,6 +392,7 @@ public final class Ui {
         }
         var t = new Label(safe(title));
         t.getStyleClass().add("topbar-title");
+        bar.getChildren().add(brandLogo(34));
         t.setWrapText(false);
         t.setTextOverrun(OverrunStyle.ELLIPSIS);
         t.setEllipsisString("...");
