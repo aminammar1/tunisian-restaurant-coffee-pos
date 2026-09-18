@@ -78,10 +78,21 @@ jobs:
       - name: Build native installer
         shell: bash
         run: |
+          RAW="${GITHUB_REF_NAME#v}"
+          # Default for manual runs (branch name, not a version tag).
+          if [[ ! "$RAW" =~ ^[0-9]+(\.[0-9]+){0,2}$ ]]; then
+            RAW="1.0.0"
+          fi
+          # macOS jpackage rejects a leading zero (CFBundleVersion requires
+          # the first integer to be > 0), so map 0.x.y -> 1.x.y.
+          if [[ "$RAW" == 0* ]]; then
+            RAW="1${RAW#0}"
+          fi
+          echo "Using app-version $RAW (from ref $GITHUB_REF_NAME)"
           jpackage \
             --type "${{ matrix.type }}" \
             --name POS-Tunisie \
-            --app-version 0.1.0 \
+            --app-version "$RAW" \
             --vendor "POS Tunisie" \
             --description "POS Tunisie cafe and restaurant point of sale" \
             --input target/installer-input \
