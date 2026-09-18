@@ -52,7 +52,7 @@ public final class StandalonePosLauncher {
     }
 
     private static Process startBackend(Path jar, Path logDir, String jwtSecret) throws IOException {
-        Path java = Path.of(System.getProperty("java.home"), "bin", isWindows() ? "java.exe" : "java");
+        Path java = resolveJavaBinary();
         return new ProcessBuilder(java.toString(), "-jar", jar.toString(),
                 "--server.port=" + API_PORT,
                 "--spring.mongodb.uri=mongodb://127.0.0.1:" + MONGO_PORT + "/pos_tunisie",
@@ -100,6 +100,32 @@ public final class StandalonePosLauncher {
                     .findFirst()
                     .orElseThrow(() -> new IOException("Missing bundled file: " + prefix + suffix));
         }
+    }
+
+    /**
+     * Locates a {@code java} launcher for the bundled backend. jpackage strips
+     * {@code bin/java} from the runtime image it generates, so the bundled
+     * {@code java.home} cannot be trusted blindly. Resolution order:
+     * <ol>
+     *   <li>{@code <java.home>/bin/java} when it exists (dev / full JDK runs),</li>
+     *   <li>{@code $JAVA_HOME/bin/java} when set,</li>
+     *   <li>{@code java} from the OS {@code PATH}.</li>
+     * </ol>
+     */
+    static Path resolveJavaBinary() throws IOException {
+        return resolveJavaBinary(Path.of(System.getProperty("java.home")), System.getenv("JAVA_HOME"));
+    }
+
+    static Path resolveJavaBinary(Path javaHome, String javaHomeEnv) throws IOException {
+        String binary = isWindows() ? "java.exe" : "java";
+        Path bundled = javaHome.resolve("bin").resolve(binary);
+        if (Files.isExecutable(bundled)) return bundled;
+        if (javaHomeEnv != null && !javaHomeEnv.isBlank()) {
+            Path fromEnv = Path.of(javaHomeEnv).resolve("bin").resolve(binary);
+            if (Files.isExecutable(fromEnv)) return fromEnv;
+        }
+        // Fall back to PATH resolution; let the OS report a clear error if absent.
+        return Path.of(binary);
     }
 
     private static String localSecret() {

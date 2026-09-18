@@ -89,6 +89,21 @@ jobs:
             RAW="1${RAW#0}"
           fi
           echo "Using app-version $RAW (from ref $GITHUB_REF_NAME)"
+          # jpackage strips bin/java from the runtime image it generates, but
+          # StandalonePosLauncher needs it to boot the bundled backend, so
+          # build the runtime ourselves with jlink (keeps the java launcher)
+          # using the same module set jpackage resolves for this app.
+          RUNTIME_ARGS=()
+          if [[ -d "$JAVA_HOME/jmods" ]]; then
+            MODS="java.base java.compiler java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.scripting java.security.jgss java.smartcardio java.transaction.xa java.sql java.sql.rowset java.xml.crypto jdk.accessibility jdk.attach jdk.compiler jdk.dynalink jdk.httpserver jdk.incubator.vector jdk.jartool jdk.jdwp.agent jdk.management jdk.management.agent jdk.management.jfr jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.unsupported.desktop jdk.xml.dom jdk.zipfs"
+            "$JAVA_HOME/bin/jlink" --output target/java-runtime \
+              --module-path "$JAVA_HOME/jmods" \
+              --add-modules "${MODS// /,}" \
+              --strip-debug --no-header-files --no-man-pages
+            RUNTIME_ARGS=(--runtime-image target/java-runtime)
+          else
+            echo "No jmods in JAVA_HOME, falling back to jpackage default runtime"
+          fi
           jpackage \
             --type "${{ matrix.type }}" \
             --name POS-Tunisie \
@@ -99,7 +114,7 @@ jobs:
             --main-jar "$(basename target/desktop-pos-*.jar)" \
             --main-class tn.cafe.pos.desktop.StandalonePosLauncher \
             --dest ../dist \
-            --java-options "--enable-native-access=javafx.graphics" \
+            "${RUNTIME_ARGS[@]}" \
             --java-options "--enable-native-access=ALL-UNNAMED"
           # Portable Linux folder (for Arch and other non-deb distros):
           # jpackage app-image needs no dpkg/rpm, runs anywhere with the
@@ -115,7 +130,7 @@ jobs:
               --main-jar "$(basename target/desktop-pos-*.jar)" \
               --main-class tn.cafe.pos.desktop.StandalonePosLauncher \
               --dest ../dist-portable \
-              --java-options "--enable-native-access=javafx.graphics" \
+              "${RUNTIME_ARGS[@]}" \
               --java-options "--enable-native-access=ALL-UNNAMED"
             tar -czf "../dist/POS-Tunisie-${RAW}-linux-portable.tar.gz" -C ../dist-portable POS-Tunisie
           fi
