@@ -21,8 +21,6 @@ public class ModeSelectView extends BorderPane {
 
         var banner = Ui.tunisiaBanner(560, 210);
 
-        var logo = Ui.brandLogo(104);
-
         var hero = Ui.oneLine(I18n.t("mode.welcome"), "hero");
         hero.setAlignment(Pos.CENTER);
         hero.setMaxWidth(Ui.MAX_TEXT_WIDTH);
@@ -51,7 +49,7 @@ public class ModeSelectView extends BorderPane {
         hint.setAlignment(Pos.CENTER);
         hint.setMaxWidth(Ui.MAX_TEXT_WIDTH);
 
-        center.getChildren().addAll(logo, banner, hero, sub, cards, hint);
+        center.getChildren().addAll(banner, hero, sub, cards, hint);
         setCenter(Ui.vscroll(center));
     }
 
