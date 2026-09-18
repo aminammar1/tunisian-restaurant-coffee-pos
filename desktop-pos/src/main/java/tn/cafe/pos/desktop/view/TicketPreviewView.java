@@ -4,17 +4,18 @@ import java.util.List;
 import java.util.Map;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 import tn.cafe.pos.desktop.core.router.Router;
 import tn.cafe.pos.desktop.core.i18n.I18n;
 import tn.cafe.pos.desktop.model.Order;
 import tn.cafe.pos.desktop.viewmodel.CartStore;
+import tn.cafe.pos.desktop.service.TicketPdfExporter;
 
 /**
  * S5 — Aperçu tickets 58mm: SERVICE (cuisine) + CLIENT (reçu).
@@ -31,6 +32,7 @@ public class TicketPreviewView extends BorderPane {
         String header = I18n.t("payment.choose");
         boolean pendingPayment = false;
         boolean justPaid = false;
+        String paymentMethod = "SIMULATION";
 
         if (p instanceof Map<?, ?> response && response.get("tickets") instanceof List<?> tickets) {
             for (Object value : tickets) {
@@ -44,6 +46,10 @@ public class TicketPreviewView extends BorderPane {
                 }
             }
             header = I18n.t("ticket.paid");
+            if (response.get("paiement") instanceof Map<?, ?> payment) {
+                Object typeValue = payment.get("type");
+                paymentMethod = typeValue == null ? "SIMULATION" : typeValue.toString();
+            }
             justPaid = true;
             CartStore.get().clear();
         } else if (p instanceof Order o) {
@@ -54,7 +60,8 @@ public class TicketPreviewView extends BorderPane {
         } else if (p instanceof PaymentView.PayCtx ctx) {
             header = I18n.t("ticket.demo", ctx.type());
             justPaid = true;
-            if (ctx.order() != null) { clientTxt = previewLocal(ctx.order()); serviceTxt = previewService(ctx.order()); }
+            paymentMethod = ctx.type();
+            if (ctx.order() != null) { clientTxt = previewLocal(ctx.order(), paymentMethod); serviceTxt = previewService(ctx.order()); }
             CartStore.get().clear();
         }
         final boolean paymentPending = pendingPayment;
@@ -78,10 +85,16 @@ public class TicketPreviewView extends BorderPane {
         top.setAlignment(Pos.CENTER);
         top.setPadding(new Insets(16, 16, 0, 16));
 
-        var print = Ui.big(I18n.t("ticket.print"), "accent");
-        HBox.setHgrow(print, Priority.ALWAYS);
-        print.setDisable(paymentPending);
-        print.setOnAction(e -> Ui.toast(this, I18n.t("ticket.printed", tn.cafe.pos.desktop.config.AppConfig.printerName())));
+        final String serviceTicket = serviceTxt;
+        final String clientTicket = clientTxt;
+        var printService = Ui.big(I18n.t("ticket.printService"), "accent");
+        var printClient = Ui.big(I18n.t("ticket.printClient"), "accent");
+        HBox.setHgrow(printService, Priority.ALWAYS);
+        HBox.setHgrow(printClient, Priority.ALWAYS);
+        printService.setDisable(paymentPending);
+        printClient.setDisable(paymentPending);
+        printService.setOnAction(e -> exportPdf(serviceTicket, I18n.t("ticket.serviceFile")));
+        printClient.setOnAction(e -> exportPdf(clientTicket, I18n.t("ticket.clientFile")));
         var again = Ui.big(I18n.t("ticket.new"), "primary");
         HBox.setHgrow(again, Priority.ALWAYS);
         again.setOnAction(e -> router.go(Router.Route.CATALOG));
@@ -92,7 +105,7 @@ public class TicketPreviewView extends BorderPane {
             payNow.setOnAction(e -> router.go(Router.Route.PAYMENT, order));
             actions.getChildren().add(payNow);
         }
-        actions.getChildren().addAll(print, again);
+        actions.getChildren().addAll(printService, printClient, again);
         actions.setAlignment(Pos.CENTER);
         actions.setPadding(new Insets(0, 16, 18, 16));
         actions.setMaxWidth(720);
@@ -123,12 +136,14 @@ public class TicketPreviewView extends BorderPane {
         return box;
     }
 
-    private static String previewLocal(Order o) {
+    private static String previewLocal(Order o, String paymentMethod) {
         var sb = new StringBuilder("*** CAFE TUNISIE ***\n").append(I18n.t("ticket.receipt")).append("\n");
         sb.append("N° ").append(o.numero()).append("\n");
         o.items().forEach(i -> sb.append(i.quantite()).append("x ").append(i.nomProduit())
                 .append("  ").append(i.sousTotal()).append("\n"));
-        sb.append("----------------\nTOTAL: ").append(o.total()).append(" TND\n").append(I18n.t("ticket.thanks")).append("\n");
+        sb.append("----------------\nTOTAL: ").append(o.total()).append(" TND\n")
+            .append(I18n.t("ticket.paymentMethod", paymentMethod)).append("\n")
+            .append(I18n.t("ticket.thanks")).append("\n");
         return sb.toString();
     }
 
@@ -137,5 +152,20 @@ public class TicketPreviewView extends BorderPane {
         sb.append("N° ").append(o.numero()).append("  ").append(o.tableOuClient()).append("\n");
         o.items().forEach(i -> sb.append("[").append(i.quantite()).append("] ").append(i.nomProduit()).append("\n"));
         return sb.toString();
+    }
+
+    private void exportPdf(String ticket, String filePrefix) {
+        var chooser = new FileChooser();
+        chooser.setTitle(Ui.safe(I18n.t("ticket.download")));
+        chooser.setInitialFileName(filePrefix + "-58mm.pdf");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF", "*.pdf"));
+        var file = chooser.showSaveDialog(getScene() == null ? null : getScene().getWindow());
+        if (file == null) return;
+        try {
+            TicketPdfExporter.writeSingle(file.toPath(), ticket);
+            Ui.toastSuccess(this, I18n.t("ticket.downloaded", file.getName()));
+        } catch (Exception ex) {
+            Ui.toastError(this, Ui.essentialError(ex));
+        }
     }
 }

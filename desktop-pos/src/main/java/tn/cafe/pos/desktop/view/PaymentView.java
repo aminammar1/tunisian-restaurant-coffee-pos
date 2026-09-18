@@ -93,7 +93,7 @@ public class PaymentView extends BorderPane {
             }
 
             @Override protected void succeeded() {
-                Platform.runLater(() -> router.go(Router.Route.TICKET, getValue()));
+                Platform.runLater(() -> showConfirmation(router, type, getValue()));
             }
 
             @Override protected void failed() {
@@ -110,5 +110,10 @@ public class PaymentView extends BorderPane {
     }
 
     /** Contexte paiement transmis aux écrans suivants. */
+    public static void showConfirmation(Router router, String type, Map<String, Object> response) {
+        router.go(Router.Route.PAYMENT_CONFIRM,
+                new PaymentConfirmationView.Confirmation(type, response));
+    }
+
     public record PayCtx(Order order, String type) {}
 }

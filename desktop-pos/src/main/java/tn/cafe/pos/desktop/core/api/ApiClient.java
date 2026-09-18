@@ -44,6 +44,12 @@ public class ApiClient {
         return mapper.readValue(res.body(), type);
     }
 
+    public <T> T get(String path, TypeReference<T> type) throws IOException, InterruptedException, ApiException {
+        var res = http.send(base(path).GET().build(), HttpResponse.BodyHandlers.ofString());
+        check(res);
+        return mapper.readValue(res.body(), type);
+    }
+
     public <T> java.util.List<T> getList(String path, Class<T> elementType) throws IOException, InterruptedException, ApiException {
         var res = http.send(base(path).GET().build(), HttpResponse.BodyHandlers.ofString());
         check(res);

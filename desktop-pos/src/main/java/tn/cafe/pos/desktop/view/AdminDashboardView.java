@@ -6,6 +6,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.BorderPane;
@@ -14,6 +15,11 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import java.time.ZoneId;
+import java.time.LocalDate;
+import java.math.BigDecimal;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.stream.Collectors;
 import tn.cafe.pos.desktop.core.api.ApiClient;
 import tn.cafe.pos.desktop.core.api.AuthSession;
 import tn.cafe.pos.desktop.core.api.SseClient;
@@ -26,11 +32,18 @@ import tn.cafe.pos.desktop.model.Order;
  * GET /orders, PATCH /orders/{id}/statut {statut}, POST /orders/{id}/annuler.
  */
 public class AdminDashboardView extends BorderPane implements ViewLifecycle {
+    private static final String STAT_STYLE = "dashboard-stat";
+    private static final ZoneId LOCAL_ZONE = ZoneId.systemDefault();
     private final ListView<String> ordersList = new ListView<>();
     private final ListView<String> feed = new ListView<>();
     private final Label live = new Label(I18n.t("sse.live"));
     private final SseClient sse = new SseClient();
     private Order[] cache = new Order[0];
+    private java.util.List<Order> visibleOrders = java.util.List.of();
+    private final DatePicker day = new DatePicker(LocalDate.now(LOCAL_ZONE));
+    private final Label revenue = Ui.oneLine("", STAT_STYLE);
+    private final Label orderCount = Ui.oneLine("", STAT_STYLE);
+    private final Label bestSeller = Ui.oneLine("", STAT_STYLE);
 
     public AdminDashboardView(Router router) {
         getStyleClass().add("root");
@@ -49,10 +62,14 @@ public class AdminDashboardView extends BorderPane implements ViewLifecycle {
         var refresh = new Button(Ui.safe(I18n.t("dashboard.refresh"))); refresh.getStyleClass().add("nav-btn");
         refresh.setMnemonicParsing(false);
         refresh.setOnAction(e -> load());
+        var today = Ui.big(I18n.t("dashboard.today"), "accent");
+        today.setMinHeight(42);
+        today.setMaxWidth(150);
+        today.setOnAction(e -> { day.setValue(LocalDate.now(LOCAL_ZONE)); refreshOrders(); });
         var out = new Button(Ui.safe(I18n.t("settings.logout"))); out.getStyleClass().add("nav-btn");
         out.setMnemonicParsing(false);
         out.setOnAction(e -> { sse.stop(); AuthSession.get().clear(); router.go(Router.Route.MODE); });
-        headLine.getChildren().addAll(who, live, spacer(), refresh, out);
+        headLine.getChildren().addAll(who, live, spacer(), day, today, refresh, out);
         var actionsBar = new FlowPane();
         actionsBar.setHgap(8);
         actionsBar.setVgap(8);
@@ -68,6 +85,14 @@ public class AdminDashboardView extends BorderPane implements ViewLifecycle {
         setBtn.setOnAction(e -> router.go(Router.Route.SETTINGS));
         actionsBar.getChildren().addAll(catBtn, tickBtn, setBtn);
         head.getChildren().addAll(headLine, actionsBar);
+
+        day.setOnAction(e -> refreshOrders());
+        var stats = new HBox(12, statBox(I18n.t("dashboard.revenue"), revenue),
+            statBox(I18n.t("dashboard.orderCount"), orderCount),
+            statBox(I18n.t("dashboard.bestSeller"), bestSeller));
+        stats.getStyleClass().add("dashboard-stats");
+        stats.setPadding(new Insets(4, 0, 0, 0));
+        head.getChildren().add(stats);
 
         ordersList.getStyleClass().add("orders");
         feed.getStyleClass().add("feed");
@@ -89,7 +114,7 @@ public class AdminDashboardView extends BorderPane implements ViewLifecycle {
 
         load();
         sse.start(msg -> {
-                    feed.getItems().add(0, Ui.safe(msg + "  " + java.time.LocalTime.now(ZoneId.systemDefault()).withNano(0)));
+                    feed.getItems().add(0, Ui.safe(msg + "  " + java.time.LocalTime.now(LOCAL_ZONE).withNano(0)));
                     load();
                 },
                     liveMsg -> live.setText(Ui.safe(liveMsg)));
@@ -137,11 +162,7 @@ public class AdminDashboardView extends BorderPane implements ViewLifecycle {
             @Override protected java.util.List<Order> call() throws Exception { return ApiClient.get().getList("/orders", Order.class); }
             @Override protected void succeeded() {
                 cache = getValue().toArray(new Order[0]);
-                Platform.runLater(() -> {
-                    ordersList.getItems().clear();
-                    for (Order o : cache)
-                        ordersList.getItems().add(Ui.safe("N°" + o.numero() + " • " + o.statut() + " • " + o.total() + " TND • " + o.tableOuClient()));
-                });
+                Platform.runLater(AdminDashboardView.this::refreshOrders);
             }
             @Override protected void failed() {
                 Platform.runLater(() -> {
@@ -156,16 +177,44 @@ public class AdminDashboardView extends BorderPane implements ViewLifecycle {
         thread.start();
     }
 
+        private VBox statBox(String title, Label value) {
+        var box = new VBox(3, Ui.oneLine(title, "stat-title"), value);
+        box.getStyleClass().add("dashboard-stat-box");
+        box.setMinWidth(170);
+        HBox.setHgrow(box, Priority.ALWAYS);
+        return box;
+        }
+
+        private void refreshOrders() {
+        LocalDate selected = day.getValue() == null ? LocalDate.now(LOCAL_ZONE) : day.getValue();
+        var selectedOrders = java.util.Arrays.stream(cache)
+                .filter(o -> o.creeLe() != null && o.creeLe().atZone(LOCAL_ZONE).toLocalDate().equals(selected))
+            .toList();
+        visibleOrders = selectedOrders;
+        ordersList.getItems().setAll(selectedOrders.stream()
+            .map(o -> Ui.safe("N°" + o.numero() + " • " + o.statut() + " • " + o.total() + " TND • " + o.tableOuClient()))
+            .toList());
+        BigDecimal total = selectedOrders.stream().map(Order::total).filter(java.util.Objects::nonNull)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        Map<String, Integer> products = selectedOrders.stream().flatMap(o -> o.items().stream())
+            .collect(Collectors.groupingBy(i -> i.nomProduit(), Collectors.summingInt(i -> i.quantite())));
+        String best = products.entrySet().stream().max(Comparator.comparingInt(Map.Entry::getValue))
+            .map(e -> e.getKey() + " (" + e.getValue() + ")").orElse(I18n.t("dashboard.none"));
+        revenue.setText(Ui.safe(total + " TND"));
+        orderCount.setText(Ui.safe(String.valueOf(selectedOrders.size())));
+        bestSeller.setText(Ui.safe(best));
+        }
+
     private void changerStatut(StatusOption statut) {
         int index = ordersList.getSelectionModel().getSelectedIndex();
-        if (index < 0 || index >= cache.length || statut == null) return;
-        if (isTerminal(cache[index])) {
+        if (index < 0 || index >= visibleOrders.size() || statut == null) return;
+        if (isTerminal(visibleOrders.get(index))) {
             String locked = Ui.safe(I18n.t("dashboard.statusLocked"));
             feed.getItems().add(0, locked);
             Ui.toastError(this, locked);
             return;
         }
-        String id = cache[index].id();
+        String id = visibleOrders.get(index).id();
         var t = new Task<Order>() {
             @Override protected Order call() throws Exception {
                 return ApiClient.get().patch("/orders/" + id + "/statut", java.util.Map.of("statut", statut.api()), Order.class);
@@ -191,14 +240,14 @@ public class AdminDashboardView extends BorderPane implements ViewLifecycle {
 
     private void annuler() {
         int index = ordersList.getSelectionModel().getSelectedIndex();
-        if (index < 0 || index >= cache.length) return;
-        if (isTerminal(cache[index])) {
+        if (index < 0 || index >= visibleOrders.size()) return;
+        if (isTerminal(visibleOrders.get(index))) {
             String locked = Ui.safe(I18n.t("dashboard.statusLocked"));
             feed.getItems().add(0, locked);
             Ui.toastError(this, locked);
             return;
         }
-        String id = cache[index].id();
+        String id = visibleOrders.get(index).id();
         var t = new Task<Order>() {
             @Override protected Order call() throws Exception {
                 return ApiClient.get().post("/orders/" + id + "/annuler", null, Order.class);

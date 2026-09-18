@@ -3,6 +3,7 @@ package tn.cafe.pos.desktop.view;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.animation.ScaleTransition;
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
@@ -18,6 +19,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 import tn.cafe.pos.desktop.core.api.ApiClient;
@@ -41,6 +43,9 @@ public class CustomerCatalogView extends BorderPane {
     private List<Product> all = new ArrayList<>();
     private String filterCat = null;
     private String search = "";
+    private long imageWaitStarted;
+    private final StackPane contentLayer = new StackPane();
+    private final javafx.scene.control.ProgressIndicator screenLoader = new javafx.scene.control.ProgressIndicator();
 
     public CustomerCatalogView(Router router) {
         this.router = router;
@@ -85,7 +90,12 @@ public class CustomerCatalogView extends BorderPane {
 
         var center = new VBox(8, searchRow, categoryScroll, scroll);
         VBox.setVgrow(scroll, Priority.ALWAYS);
-        setCenter(center);
+        screenLoader.setPrefSize(54, 54);
+        screenLoader.setMaxSize(54, 54);
+        screenLoader.getStyleClass().add("screen-loader");
+        contentLayer.getChildren().addAll(center, screenLoader);
+        StackPane.setAlignment(screenLoader, Pos.CENTER);
+        setCenter(contentLayer);
         var orderPanel = cartDock();
         setRight(orderPanel);
         widthProperty().addListener((observable, oldWidth, newWidth) -> {
@@ -194,7 +204,7 @@ public class CustomerCatalogView extends BorderPane {
 
     private Button catBtn(String label, String id) {
         var b = new Button(Ui.safe(label));
-        b.getStyleClass().add("chip");
+        b.getStyleClass().addAll("chip", "category-chip");
         b.setMinHeight(44);
         b.setMnemonicParsing(false);
         b.setTextOverrun(javafx.scene.control.OverrunStyle.ELLIPSIS);
@@ -214,6 +224,26 @@ public class CustomerCatalogView extends BorderPane {
             .filter(p -> search.isBlank() || (p.nom() != null && p.nom().toLowerCase().contains(search)))
             .forEach(p -> grid.getChildren().add(card(p)));
         refreshCart();
+        waitForImages();
+    }
+
+    private void waitForImages() {
+        if (imageWaitStarted == 0) imageWaitStarted = System.nanoTime();
+        if (all.isEmpty()) {
+            screenLoader.setVisible(false);
+            return;
+        }
+        var check = new PauseTransition(Duration.millis(120));
+        check.setOnFinished(e -> {
+            boolean ready = grid.lookupAll(".product-image").stream().allMatch(javafx.scene.Node::isVisible);
+            if (ready || System.nanoTime() - imageWaitStarted > 5_000_000_000L) {
+                screenLoader.setVisible(false);
+                imageWaitStarted = 0;
+            } else {
+                waitForImages();
+            }
+        });
+        check.play();
     }
 
     private VBox card(Product p) {
@@ -221,11 +251,11 @@ public class CustomerCatalogView extends BorderPane {
         c.getStyleClass().add("product-card");
         c.setPadding(new Insets(12));
         c.setAlignment(Pos.TOP_CENTER);
-        c.setMinSize(190, 170);
-        c.setMaxWidth(220);
-        javafx.scene.Node visual = Ui.webImage(p.imageUrl(), 190, 92, I18n.t("catalog.photo"));
+        c.setMinSize(210, 218);
+        c.setMaxWidth(230);
+        javafx.scene.Node visual = Ui.webImage(p.imageUrl(), 206, 108, I18n.t("catalog.photo"));
         var nom = Ui.oneLine(p.nom(), "product-name");
-        nom.setMaxWidth(190);
+        nom.setMaxWidth(206);
         nom.setMinHeight(20);
         nom.setAlignment(Pos.CENTER);
         var prix = Ui.amount(String.valueOf(p.prix()) + " TND", "price");

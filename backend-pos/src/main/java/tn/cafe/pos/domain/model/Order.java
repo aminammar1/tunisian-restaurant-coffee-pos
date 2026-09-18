@@ -15,6 +15,7 @@ public class Order {
     private OrderStatus statut;
     private String tableOuClient;
     private Instant creeLe;
+    private PaymentType paiementTicket;
 
     public Order(String id, String numero, List<OrderItem> items, BigDecimal total,
                  OrderStatus statut, String tableOuClient, Instant creeLe) {
@@ -88,6 +89,8 @@ public class Order {
     public OrderStatus getStatut() { return statut; }
     public String getTableOuClient() { return tableOuClient; }
     public Instant getCreeLe() { return creeLe; }
+    public PaymentType getPaiementTicket() { return paiementTicket; }
+    public void definirPaiementTicket(PaymentType type) { this.paiementTicket = type; }
 
     @Override public boolean equals(Object o) {
         if (this == o) return true;

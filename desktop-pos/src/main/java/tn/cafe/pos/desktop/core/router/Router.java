@@ -11,7 +11,7 @@ import tn.cafe.pos.desktop.view.*;
 /** Tiny router: single StackPane root, navigate() swaps full-screen views. */
 public class Router {
     public enum Route {
-        MODE, CATALOG, CART, PAYMENT, QR_PAY, NFC_PAY, TICKET,
+        MODE, CATALOG, CART, PAYMENT, PAYMENT_CONFIRM, QR_PAY, NFC_PAY, TICKET,
         ADMIN_LOGIN, ADMIN_DASH, CATALOG_ADMIN, TICKETS, SETTINGS
     }
 
@@ -56,6 +56,7 @@ public class Router {
             case CATALOG -> () -> new CustomerCatalogView(this);
             case CART -> () -> new CartView(this);
             case PAYMENT -> () -> new PaymentView(this);
+            case PAYMENT_CONFIRM -> () -> new PaymentConfirmationView(this);
             case QR_PAY -> () -> new QrPayView(this);
             case NFC_PAY -> () -> new NfcPayView(this);
             case TICKET -> () -> new TicketPreviewView(this);

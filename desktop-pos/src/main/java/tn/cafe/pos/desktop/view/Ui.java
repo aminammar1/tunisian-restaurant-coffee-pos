@@ -7,7 +7,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.MenuButton;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.ScrollPane;
@@ -154,10 +154,16 @@ public final class Ui {
             ph.visibleProperty().bind(view.visibleProperty().not());
             ph.managedProperty().bind(view.visibleProperty().not());
             img.progressProperty().addListener((o, a, b) -> {
-                if (b.doubleValue() >= 1 && !img.isError()) view.setVisible(true);
+                if (b.doubleValue() >= 1 && !img.isError()) {
+                    view.setVisible(true);
+                }
             });
-            img.errorProperty().addListener((o, a, b) -> view.setVisible(false));
-            if (img.getProgress() >= 1 && !img.isError()) view.setVisible(true);
+            img.errorProperty().addListener((o, a, b) -> {
+                view.setVisible(false);
+            });
+            if (img.getProgress() >= 1 && !img.isError()) {
+                view.setVisible(true);
+            }
             stack.getChildren().add(view);
         } catch (RuntimeException badUrl) {
             // keep placeholder only
@@ -228,24 +234,33 @@ public final class Ui {
      * missing resource only leaves a red panel — layout never shifts.
      */
     public static Node tunisiaBanner(double width, double height) {
+        return photoBanner("/img/tunisian-cafe.jpg", width, height);
+    }
+
+    public static Node sidebarBanner(double width, double height) {
+        return photoBanner("/img/tunisian-cafe-sidebar.jpg", width, height);
+    }
+
+    private static Node photoBanner(String resource, double width, double height) {
         var holder = new javafx.scene.layout.StackPane();
         holder.setMinSize(width, height);
         holder.setPrefSize(width, height);
         holder.setMaxSize(width, height);
         holder.getStyleClass().add("banner-frame");
-        try (var in = Ui.class.getResourceAsStream("/img/tunisian-cafe.jpg")) {
+        try (var in = Ui.class.getResourceAsStream(resource)) {
             if (in == null) return holder;
             var img = new javafx.scene.image.Image(in);
             if (img.isError()) return holder;
             var view = new javafx.scene.image.ImageView(img);
-            view.setFitWidth(width);
-            view.setFitHeight(height);
+            double scale = Math.max(width / img.getWidth(), height / img.getHeight());
+            view.setFitWidth(img.getWidth() * scale);
+            view.setFitHeight(img.getHeight() * scale);
             view.setPreserveRatio(false);
             view.setSmooth(true);
             var clip = new javafx.scene.shape.Rectangle(width, height);
             clip.setArcWidth(28);
             clip.setArcHeight(28);
-            view.setClip(clip);
+            holder.setClip(clip);
             holder.getChildren().add(view);
         } catch (Exception ignored) {
             // red frame fallback from CSS
@@ -263,6 +278,18 @@ public final class Ui {
         b.setTextOverrun(OverrunStyle.ELLIPSIS);
         b.setEllipsisString("...");
         b.setTooltip(new Tooltip(safe(text)));
+        return b;
+    }
+
+    public static Button iconButton(org.kordamp.ikonli.Ikon ikon, String tooltip) {
+        var b = new Button();
+        b.setGraphic(icon(ikon, 17));
+        b.getStyleClass().addAll(NAV_BUTTON_CLASS, "icon-btn");
+        b.setMinSize(42, 42);
+        b.setPrefSize(42, 42);
+        b.setMaxSize(42, 42);
+        b.setTooltip(new Tooltip(safe(tooltip)));
+        b.setAccessibleText(safe(tooltip));
         return b;
     }
 
@@ -348,27 +375,37 @@ public final class Ui {
         HBox.setHgrow(t, Priority.SOMETIMES);
         var spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        var language = new MenuButton(safe(I18n.current().code()));
-        language.getStyleClass().add("language-menu");
-        language.setTextOverrun(OverrunStyle.ELLIPSIS);
+        var language = iconButton(org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.GLOBE,
+                I18n.t("nav.language"));
+        var languageMenu = new ContextMenu();
         for (I18n.Language choice : I18n.Language.values()) {
             var item = new MenuItem(safe(choice.label()));
             item.setOnAction(e -> { I18n.set(choice); router.refresh(); });
-            language.getItems().add(item);
+            languageMenu.getItems().add(item);
         }
-        var theme = new Button(safe(I18n.t("nav.theme")));
-        theme.getStyleClass().add(NAV_BUTTON_CLASS);
-        theme.setMnemonicParsing(false);
-        theme.setTextOverrun(OverrunStyle.ELLIPSIS);
+        language.setOnAction(e -> languageMenu.show(language, javafx.geometry.Side.BOTTOM, 0, 0));
+        var theme = iconButton(org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.MOON,
+                I18n.t("nav.theme"));
         theme.setOnAction(e -> {
             var scene = bar.getScene();
-            if (scene != null) { ThemeManager.toggle(scene); theme.setText(safe(I18n.t("nav.theme"))); }
+            if (scene != null) {
+                ThemeManager.toggle(scene);
+                theme.setGraphic(icon(ThemeManager.current() == ThemeManager.Mode.DARK
+                        ? org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.SUN
+                        : org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.MOON, 17));
+            }
         });
-        var home = new Button(safe(I18n.t("nav.home")));
-        home.getStyleClass().add(NAV_BUTTON_CLASS);
-        home.setMnemonicParsing(false);
-        home.setTextOverrun(OverrunStyle.ELLIPSIS);
+        var home = iconButton(org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.HOME, I18n.t("nav.home"));
         home.setOnAction(e -> router.go(Router.Route.MODE));
+        if (canBack) {
+            var back = bar.getChildren().get(0);
+            ((Button) back).setGraphic(icon(org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.ARROW_LEFT, 16));
+            ((Button) back).setText("");
+            ((Button) back).setMinSize(42, 42);
+            ((Button) back).setPrefSize(42, 42);
+            ((Button) back).setMaxSize(42, 42);
+            ((Button) back).setTooltip(new Tooltip(safe(I18n.t("nav.back"))));
+        }
         bar.getChildren().addAll(t, spacer, language, theme, home);
         return bar;
     }
@@ -403,14 +440,25 @@ public final class Ui {
     private static void showToast(javafx.scene.layout.Pane root, String msg, String cls, double seconds) {
         String text = safe(msg);
         if (text.isBlank()) return;
-        var label = oneLine(text, cls);
-        label.setMaxWidth(520);
         try {
             var scene = root.getScene();
             if (scene != null && scene.getWindow() != null) {
                 var win = scene.getWindow();
                 var pop = new Popup();
-                pop.getContent().add(label);
+                var iconType = "toast-error".equals(cls)
+                    ? org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.EXCLAMATION_CIRCLE
+                    : org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.CHECK_CIRCLE;
+                var mark = icon(iconType, 20);
+                mark.setIconColor(javafx.scene.paint.Color.web("toast-error".equals(cls) ? "#b42332" : "#1e8e4d"));
+                var label = oneLine(text, cls);
+                label.setMaxWidth(430);
+                var close = new Button("×");
+                close.getStyleClass().add("toast-close");
+                var content = new HBox(12, mark, label, close);
+                content.getStyleClass().addAll("toast-container", cls);
+                HBox.setHgrow(label, Priority.ALWAYS);
+                close.setOnAction(e -> pop.hide());
+                pop.getContent().add(content);
                 pop.setAutoHide(true);
                 pop.setAutoFix(true);
                 int slot = ACTIVE_TOASTS.getAndIncrement();
@@ -426,6 +474,7 @@ public final class Ui {
         } catch (RuntimeException ignored) {
             // fall through to inline toast
         }
+        var label = oneLine(text, cls);
         root.getChildren().add(label);
         StackPanePos.bottom(label, root);
         var ft = new javafx.animation.FadeTransition(javafx.util.Duration.seconds(3), label);

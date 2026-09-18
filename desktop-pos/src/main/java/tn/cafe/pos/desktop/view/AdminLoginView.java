@@ -1,6 +1,8 @@
 package tn.cafe.pos.desktop.view;
 
 import java.util.Map;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
@@ -20,13 +22,13 @@ import tn.cafe.pos.desktop.core.api.ApiClient;
 import tn.cafe.pos.desktop.core.api.AuthSession;
 import tn.cafe.pos.desktop.core.i18n.I18n;
 import tn.cafe.pos.desktop.core.router.Router;
-import tn.cafe.pos.desktop.service.QrScannerService;
-import com.github.sarxos.webcam.Webcam;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.MultiFormatWriter;
+import com.google.zxing.common.BitMatrix;
 
-/** S6 — Connexion Gérant (FR): Mot de passe / PIN / QR webcam. POST /auth/{login,pin,qr}. */
-public class AdminLoginView extends BorderPane implements ViewLifecycle {
+/** S6 — Connexion Gérant (FR): Mot de passe / PIN / badge QR. */
+public class AdminLoginView extends BorderPane {
     private final Label status = new Label();
-    private final QrScannerService scanner = new QrScannerService();
 
     public AdminLoginView(Router router) {
         getStyleClass().add("root");
@@ -69,46 +71,27 @@ public class AdminLoginView extends BorderPane implements ViewLifecycle {
         tabs.getTabs().add(tab(I18n.t("login.pin"), pinBox));
 
         // QR
-        var preview = new ImageView(); preview.setFitWidth(420); preview.setFitHeight(220); preview.setPreserveRatio(true);
-        preview.getStyleClass().add("cam");
         var qrField = new TextField(); qrField.setPromptText(I18n.t("login.qr.placeholder"));
         styleAll(qrField);
         var qrStatus = new Label(I18n.t("login.qr.note"));
-        var start = Ui.big(I18n.t("login.startCamera"), "accent");
+        var preview = new ImageView();
+        preview.setFitWidth(220); preview.setFitHeight(220); preview.setPreserveRatio(false);
+        preview.setSmooth(false);
+        preview.getStyleClass().add("qr-image");
+        var showQr = Ui.big(I18n.t("login.showQr"), "accent");
         var b3 = Ui.big(I18n.t("login.qrConnect"), "primary");
-        Runnable submitQr = () -> { scanner.stop(); loginTo(router, "/auth/qr", Map.of("qrKey", qrField.getText()), qrStatus); };
+        Runnable submitQr = () -> loginTo(router, "/auth/qr", Map.of("qrKey", qrField.getText()), qrStatus);
         b3.setOnAction(e -> submitQr.run());
-        // Object-close simulation: hold something in front of the lens and the
-        // dark frames auto-submit when a key is typed, otherwise just report it.
-        java.util.function.Consumer<String> onObjectClose = ignored -> {
-            if (qrField.getText().isBlank()) qrStatus.setText(Ui.safe(I18n.t("login.qr.detected")));
-            else submitQr.run();
-        };
-        start.setOnAction(e -> {
-            start.setDisable(true);
-            var open = new Thread(() -> {
-                Webcam cam;
-                try { cam = scanner.openDefault(); }
-                catch (Exception ex) { cam = null; }
-                final Webcam found = cam;
-                javafx.application.Platform.runLater(() -> {
-                    start.setDisable(false);
-                    if (found == null) qrStatus.setText(Ui.safe(I18n.t("login.noCamera")));
-                    else scanner.preview(found, preview, qrField::setText, s -> qrStatus.setText(Ui.safe(s)), onObjectClose);
-                });
-            }, "qr-cam-open");
-            open.setDaemon(true);
-            open.start();
-        });
+        showQr.setOnAction(e -> loadBackendQr(user.getText(), qrField, preview, qrStatus, showQr));
         var qrPreview = new VBox(8, Ui.title("QR"), preview);
         qrPreview.getStyleClass().add("qr-preview");
         qrPreview.setMaxWidth(Double.MAX_VALUE);
         preview.setFitWidth(380); preview.setFitHeight(200); preview.setPreserveRatio(true);
         preview.setPreserveRatio(true);
-        var qrActions = new HBox(10, start, b3);
+        var qrActions = new HBox(10, showQr, b3);
         qrActions.setAlignment(Pos.CENTER);
-        HBox.setHgrow(start, Priority.ALWAYS); HBox.setHgrow(b3, Priority.ALWAYS);
-        start.setMaxWidth(Double.MAX_VALUE); b3.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(showQr, Priority.ALWAYS); HBox.setHgrow(b3, Priority.ALWAYS);
+        showQr.setMaxWidth(Double.MAX_VALUE); b3.setMaxWidth(Double.MAX_VALUE);
         qrStatus.setWrapText(false);
         qrStatus.setTextOverrun(javafx.scene.control.OverrunStyle.ELLIPSIS);
         qrStatus.setMaxWidth(420);
@@ -122,7 +105,7 @@ public class AdminLoginView extends BorderPane implements ViewLifecycle {
         var brandTag = Ui.oneLine(I18n.t("app.tag"), "subtitle");
         brandTag.setAlignment(Pos.CENTER);
         brandTag.setMaxWidth(224);
-        var brand = new VBox(14, Ui.tunisiaBanner(224, 120), brandTitle, brandTag);
+        var brand = new VBox(14, Ui.sidebarBanner(224, 120), brandTitle, brandTag);
         brand.getStyleClass().add("login-brand");
         brand.setAlignment(Pos.CENTER);
         brand.setPrefWidth(280);
@@ -166,7 +149,6 @@ public class AdminLoginView extends BorderPane implements ViewLifecycle {
                 String username = String.valueOf(r.getOrDefault("username", "gerant"));
                 AuthSession.get().set(token, username, String.valueOf(r.getOrDefault("role", "GERANT")));
                 Platform.runLater(() -> {
-                    scanner.stop();
                     Ui.toastSuccess(AdminLoginView.this, I18n.t("dashboard.connected", username));
                     router.go(Router.Route.ADMIN_DASH);
                 });
@@ -184,5 +166,52 @@ public class AdminLoginView extends BorderPane implements ViewLifecycle {
         thread.start();
     }
 
-    @Override public void dispose() { scanner.stop(); }
+    private static void renderQr(ImageView preview, String raw, Label status) {
+        String value = raw == null ? "" : raw.strip();
+        if (value.isBlank()) {
+            status.setText(Ui.safe(I18n.t("login.qr.required")));
+            return;
+        }
+        try {
+            BitMatrix matrix = new MultiFormatWriter().encode(value, BarcodeFormat.QR_CODE, 260, 260);
+            var image = new javafx.scene.image.WritableImage(matrix.getWidth(), matrix.getHeight());
+            for (int x = 0; x < matrix.getWidth(); x++) {
+                for (int y = 0; y < matrix.getHeight(); y++) {
+                    image.getPixelWriter().setColor(x, y, matrix.get(x, y)
+                            ? javafx.scene.paint.Color.BLACK : javafx.scene.paint.Color.WHITE);
+                }
+            }
+            preview.setImage(image);
+            status.setText(Ui.safe(I18n.t("login.qr.ready")));
+        } catch (Exception ex) {
+            status.setText(Ui.safe(I18n.t("login.qr.invalid")));
+        }
+    }
+
+    private static void loadBackendQr(String username, TextField qrField, ImageView preview,
+            Label status, javafx.scene.control.Button trigger) {
+        String account = username == null || username.isBlank() ? "admin" : username.strip();
+        trigger.setDisable(true);
+        status.setText(Ui.safe(I18n.t("login.qr.loading")));
+        var task = new Task<Map<String, Object>>() {
+            @Override protected Map<String, Object> call() throws Exception {
+                String encoded = URLEncoder.encode(account, StandardCharsets.UTF_8);
+                return ApiClient.get().get("/auth/qr-key?username=" + encoded,
+                        new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
+            }
+            @Override protected void succeeded() {
+                String key = String.valueOf(getValue().getOrDefault("qrKey", ""));
+                qrField.setText(key);
+                renderQr(preview, key, status);
+                trigger.setDisable(false);
+            }
+            @Override protected void failed() {
+                status.setText(Ui.essentialError(getException()));
+                trigger.setDisable(false);
+            }
+        };
+        var thread = new Thread(task, "manager-qr-create");
+        thread.setDaemon(true);
+        thread.start();
+    }
 }

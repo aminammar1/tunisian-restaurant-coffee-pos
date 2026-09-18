@@ -95,7 +95,7 @@ public class NfcPayView extends BorderPane {
                 return ApiClient.get().postMap("/payments/proximite", Map.of("commandeId", order.id(), "signalDetecte", true));
             }
             @Override protected void succeeded() {
-                Platform.runLater(() -> router.go(Router.Route.TICKET, getValue()));
+                Platform.runLater(() -> PaymentView.showConfirmation(router, "INFRARED", getValue()));
             }
             @Override protected void failed() {
                 Platform.runLater(() -> {

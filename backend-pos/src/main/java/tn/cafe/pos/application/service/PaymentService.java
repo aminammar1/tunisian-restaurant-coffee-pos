@@ -39,6 +39,7 @@ public class PaymentService {
         Payment p = paiements.save(Payment.simulerSucces(o.getId(), req.type(), o.getTotal(), ref));
         o.marquerPayee();
         Order payee = commandes.save(o);
+        payee.definirPaiementTicket(req.type());
         List<Ticket> deux = tickets.genererDeuxTickets(payee);
         hub.diffuser(payee);
         return new PaiementResultat(p, payee, deux);

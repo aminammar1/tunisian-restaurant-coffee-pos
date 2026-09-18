@@ -19,13 +19,13 @@ public class ModeSelectView extends BorderPane {
         center.setAlignment(Pos.TOP_CENTER);
         center.setPadding(new Insets(24, 24, 28, 24));
 
-        var banner = Ui.tunisiaBanner(560, 190);
+        var banner = Ui.tunisiaBanner(560, 210);
 
         var hero = Ui.oneLine(I18n.t("mode.welcome"), "hero");
         hero.setAlignment(Pos.CENTER);
         hero.setMaxWidth(Ui.MAX_TEXT_WIDTH);
 
-        var sub = Ui.subtitle(I18n.t("mode.subtitle"));
+        var sub = Ui.paragraph(I18n.t("mode.subtitle"), "subtitle");
 
         var cards = new FlowPane();
         cards.setHgap(20);
@@ -35,12 +35,12 @@ public class ModeSelectView extends BorderPane {
 
         var clientCard = modeCard(I18n.t("mode.customer"),
                 I18n.t("mode.customer.desc"), I18n.t("mode.customer.cta"), "mode-card",
-                Ui.icon(org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.USERS, 52));
+                Ui.icon(org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.USERS, 42));
         clientCard.setOnMouseClicked(e -> router.go(Router.Route.CATALOG));
 
         var gerantCard = modeCard(I18n.t("mode.manager"),
                 I18n.t("mode.manager.desc"), I18n.t("mode.manager.cta"), "red-card",
-                Ui.iconOnRed(org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.USER_COG, 52));
+            Ui.iconOnRed(org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.USER_COG, 42));
         gerantCard.setOnMouseClicked(e -> router.go(Router.Route.ADMIN_LOGIN));
 
         cards.getChildren().addAll(clientCard, gerantCard);

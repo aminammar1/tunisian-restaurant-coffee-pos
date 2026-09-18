@@ -62,6 +62,7 @@
 .price { -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #ff8d9a; }
 .live { -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #ff8d9a; }
 .product-image { -fx-background-color: #171213; -fx-background-radius: 8; }
+.screen-loader { -fx-progress-color: #ff8d9a; }
 .image-placeholder { -fx-background-color: #3a2428; -fx-text-fill: #f1a0a7; -fx-font-size: 13px; -fx-alignment: center; -fx-min-height: 92px; -fx-max-width: 190px; -fx-pref-width: 190px; }
 .scroll, .scroll .viewport, .scroll-pane, .scroll-pane > .viewport, .scroll-pane > .corner { -fx-background-color: transparent; }
 
@@ -89,9 +90,17 @@
 .scroll-bar .thumb { -fx-background-color: #5a4c50; -fx-background-radius: 8; }
 .ticket-text { -fx-font-family: "Noto Sans Mono", "Noto Sans Arabic", "DejaVu Sans Mono", monospace; -fx-font-size: 12px; -fx-text-fill: #f5efef; }
 .ticket-text .content { -fx-background-color: #1c1618; }
-.toast { -fx-background-color: #c8102e; -fx-text-fill: white; -fx-font-size: 13px; -fx-padding: 12 20; -fx-background-radius: 8; }
-.toast-success { -fx-background-color: #2ea043; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-padding: 12 20; -fx-background-radius: 8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,.5), 12, 0, 0, 3); }
-.toast-error { -fx-background-color: #e5484d; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-padding: 12 20; -fx-background-radius: 8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,.5), 12, 0, 0, 3); }
+.toast, .toast-success, .toast-error { -fx-text-fill: #d8e9ff; -fx-font-size: 13px; -fx-font-weight: bold; -fx-padding: 13 22; -fx-background-radius: 8; -fx-alignment: center; -fx-min-height: 46; -fx-border-color: #43668f; -fx-border-width: 1; -fx-border-radius: 8; }
+.toast-container { -fx-background-color: #223b5a; -fx-padding: 12 16; -fx-background-radius: 8; -fx-border-color: #43668f; -fx-border-width: 1; -fx-border-radius: 8; -fx-min-width: 420; -fx-max-width: 560; }
+.toast-container.toast-success { -fx-background-color: #1e4930; -fx-border-color: #397d51; }
+.toast-container.toast-error { -fx-background-color: #54232b; -fx-border-color: #8b4b54; }
+.toast, .toast-success { -fx-background-color: transparent; -fx-border-color: transparent; -fx-text-fill: #8fe0ae; }
+.toast-error { -fx-background-color: transparent; -fx-border-color: transparent; -fx-text-fill: #ffdfe2; }
+.toast-close { -fx-background-color: transparent; -fx-padding: 0 5; -fx-font-size: 22px; -fx-text-fill: #b9d5f7; }
+.toast-container.toast-success .toast-close { -fx-text-fill: #8fe0ae; }
+.toast-container.toast-error .toast-close { -fx-text-fill: #ffdfe2; }
+.category-chip { -fx-background-radius: 12; -fx-border-radius: 12; -fx-padding: 10 17; -fx-font-size: 13px; -fx-font-weight: bold; }
+.category-chip:hover { -fx-translate-y: -1px; }
 .link { -fx-background-color: transparent; -fx-text-fill: #ff8d9a; -fx-underline: true; -fx-cursor: hand; }
 .tabs .tab { -fx-font-size: 14px; -fx-font-weight: bold; }
 .tab-pane.tabs > .tab-header-area > .headers-region > .tab:selected { -fx-background-color: #e5484d; -fx-background-radius: 8 8 0 0; }
@@ -101,6 +110,11 @@
 .pin-key:hover { -fx-background-color: rgba(229,72,77,.16); -fx-border-color: #e5484d; }
 .pin-key:pressed { -fx-background-color: rgba(229,72,77,.26); }
 .status { -fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #ff8d9a; }
+.dashboard-stat-box { -fx-background-color: #262022; -fx-background-radius: 10; -fx-border-color: #45363b; -fx-border-radius: 10; -fx-padding: 10 12; }
+.stat-title { -fx-font-size: 11px; -fx-text-fill: #b7a9ac; }
+.dashboard-stat { -fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #ff8d9a; }
+.payment-check { -fx-text-fill: white; -fx-font-size: 72px; -fx-font-weight: bold; }
+.qr-image { -fx-background-color: white; -fx-padding: 8; }
 .radar-1 { -fx-fill: transparent; -fx-stroke: #e5484d; -fx-stroke-width: 2; -fx-opacity: .9; }
 .radar-2 { -fx-fill: transparent; -fx-stroke: #e5484d; -fx-stroke-width: 2; -fx-opacity: .6; }
 .radar-3 { -fx-fill: transparent; -fx-stroke: #e5484d; -fx-stroke-width: 2; -fx-opacity: .3; }

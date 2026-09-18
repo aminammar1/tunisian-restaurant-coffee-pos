@@ -6,6 +6,7 @@ import tn.cafe.pos.domain.exception.ResourceNotFoundException;
 import tn.cafe.pos.domain.model.Order;
 import tn.cafe.pos.domain.model.Ticket;
 import tn.cafe.pos.domain.model.TicketType;
+import tn.cafe.pos.domain.model.PaymentType;
 import tn.cafe.pos.domain.repository.TicketRepository;
 import tn.cafe.pos.infrastructure.printing.TicketRenderer;
 
@@ -20,10 +21,21 @@ public class TicketService {
 
     /** Génère et persiste les 2 tickets obligatoires : SERVICE + CLIENT. */
     public List<Ticket> genererDeuxTickets(Order order) {
+        PaymentType paymentType = order.getPaiementTicket();
+        return genererDeuxTickets(order, paymentType);
+        }
+
+        public List<Ticket> genererDeuxTickets(Order order, PaymentType paymentType) {
+            String serviceText = paymentType == null
+                ? renderer.rendre(order, TicketType.SERVICE)
+                : renderer.rendre(order, TicketType.SERVICE, paymentType);
+            String clientText = paymentType == null
+                ? renderer.rendre(order, TicketType.CLIENT)
+                : renderer.rendre(order, TicketType.CLIENT, paymentType);
         Ticket service = tickets.save(Ticket.creer(order.getId(), order.getNumero(),
-                TicketType.SERVICE, renderer.rendre(order, TicketType.SERVICE)));
+                TicketType.SERVICE, serviceText));
         Ticket client = tickets.save(Ticket.creer(order.getId(), order.getNumero(),
-                TicketType.CLIENT, renderer.rendre(order, TicketType.CLIENT)));
+                TicketType.CLIENT, clientText));
         return List.of(service, client);
     }
 

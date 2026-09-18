@@ -62,6 +62,7 @@
 .product-name { -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #211a1b; -fx-line-spacing: 1; }
 .price, .live { -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #c8102e; }
 .product-image { -fx-background-color: #f9ecee; -fx-background-radius: 8; }
+.screen-loader { -fx-progress-color: #c8102e; }
 .image-placeholder { -fx-background-color: #f9ecee; -fx-text-fill: #b23a4c; -fx-font-size: 13px; -fx-alignment: center; -fx-min-height: 92px; -fx-max-width: 190px; -fx-pref-width: 190px; }
 .scroll, .scroll .viewport, .scroll-pane, .scroll-pane > .viewport, .scroll-pane > .corner { -fx-background-color: transparent; }
 
@@ -88,9 +89,18 @@
 .list-cell:filled:selected { -fx-background-color: rgba(200,16,46,.14); -fx-text-fill: #7d0d1d; }
 .scroll-bar .thumb { -fx-background-color: #cfc0bd; -fx-background-radius: 8; }
 .ticket-text { -fx-font-family: "Noto Sans Mono", "Noto Sans Arabic", "DejaVu Sans Mono", monospace; -fx-font-size: 12px; -fx-text-fill: #211a1b; }
-.toast { -fx-background-color: #c8102e; -fx-text-fill: white; -fx-font-size: 13px; -fx-padding: 12 20; -fx-background-radius: 8; }
-.toast-success { -fx-background-color: #1e8e4d; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-padding: 12 20; -fx-background-radius: 8; -fx-effect: dropshadow(gaussian, rgba(20,60,35,.35), 12, 0, 0, 3); }
-.toast-error { -fx-background-color: #c8102e; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-padding: 12 20; -fx-background-radius: 8; -fx-effect: dropshadow(gaussian, rgba(120,10,25,.35), 12, 0, 0, 3); }
+.toast, .toast-success, .toast-error { -fx-text-fill: #1f3b65; -fx-font-size: 13px; -fx-font-weight: bold; -fx-padding: 13 22; -fx-background-radius: 8; -fx-alignment: center; -fx-min-height: 46; -fx-border-color: #b9d5f7; -fx-border-width: 1; -fx-border-radius: 8; }
+.toast-container { -fx-background-color: #e7f1ff; -fx-padding: 12 16; -fx-background-radius: 8; -fx-border-color: #b9d5f7; -fx-border-width: 1; -fx-border-radius: 8; -fx-min-width: 420; -fx-max-width: 560; }
+.toast-container.toast-success { -fx-background-color: #e9f8ef; -fx-border-color: #a9dfbb; }
+.toast-container.toast-error { -fx-background-color: #fff0f0; -fx-border-color: #efb5bc; }
+.toast, .toast-success { -fx-background-color: transparent; -fx-border-color: transparent; -fx-text-fill: #1f3b65; }
+.toast-success { -fx-text-fill: #197342; }
+.toast-error { -fx-background-color: transparent; -fx-border-color: transparent; -fx-text-fill: #b42332; }
+.toast-close { -fx-background-color: transparent; -fx-padding: 0 5; -fx-font-size: 22px; -fx-text-fill: #4675a9; }
+.toast-container.toast-success .toast-close { -fx-text-fill: #1e8e4d; }
+.toast-container.toast-error .toast-close { -fx-text-fill: #b42332; }
+.category-chip { -fx-background-radius: 12; -fx-border-radius: 12; -fx-padding: 10 17; -fx-font-size: 13px; -fx-font-weight: bold; }
+.category-chip:hover { -fx-translate-y: -1px; }
 .link { -fx-background-color: transparent; -fx-text-fill: #c8102e; -fx-underline: true; -fx-cursor: hand; }
 .tabs .tab { -fx-font-size: 14px; -fx-font-weight: bold; }
 .tab-pane.tabs > .tab-header-area > .headers-region > .tab:selected { -fx-background-color: #c8102e; -fx-background-radius: 8 8 0 0; }
@@ -100,6 +110,11 @@
 .pin-key:hover { -fx-background-color: rgba(200,16,46,.07); -fx-border-color: #c8102e; }
 .pin-key:pressed { -fx-background-color: rgba(200,16,46,.14); }
 .status { -fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #a41226; }
+.dashboard-stat-box { -fx-background-color: #ffffff; -fx-background-radius: 10; -fx-border-color: #e7e0de; -fx-border-radius: 10; -fx-padding: 10 12; }
+.stat-title { -fx-font-size: 11px; -fx-text-fill: #6f625f; }
+.dashboard-stat { -fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #c8102e; }
+.payment-check { -fx-text-fill: white; -fx-font-size: 72px; -fx-font-weight: bold; }
+.qr-image { -fx-background-color: white; -fx-padding: 8; }
 .radar-1 { -fx-fill: transparent; -fx-stroke: #c8102e; -fx-stroke-width: 2; -fx-opacity: .9; }
 .radar-2 { -fx-fill: transparent; -fx-stroke: #c8102e; -fx-stroke-width: 2; -fx-opacity: .6; }
 .radar-3 { -fx-fill: transparent; -fx-stroke: #c8102e; -fx-stroke-width: 2; -fx-opacity: .3; }

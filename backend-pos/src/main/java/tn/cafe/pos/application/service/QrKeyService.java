@@ -20,4 +20,10 @@ public class QrKeyService {
         u.regenererQrKey(generator.generer());
         return users.save(u);
     }
+
+    public String cle(String username) {
+        return users.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable"))
+                .getQrKey();
+    }
 }
