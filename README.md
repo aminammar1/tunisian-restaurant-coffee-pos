@@ -2,6 +2,36 @@
 
 > A point-of-sale platform designed for Tunisian cafés and restaurants: fast order taking, simulated payment, kitchen-ready tickets, and real-time order visibility.
 
+<p align="center">
+  <img src="https://skillicons.dev/icons?i=java,spring,mongodb,maven,javafx,docker,git,github" alt="Technology stack: Java, Spring, MongoDB, Maven, JavaFX, Docker, Git, GitHub" />
+</p>
+
+## Product at a glance
+
+<p align="center">
+  <img src="docs/screenshots/image.png" alt="POS Tunisie home screen" width="49%" />
+  <img src="docs/screenshots/image2.png" alt="Customer menu with products and basket" width="49%" />
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/image3.png" alt="Customer order basket" width="49%" />
+  <img src="docs/screenshots/image4.png" alt="Payment methods screen" width="49%" />
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/image5.png" alt="Kitchen and customer ticket preview" width="49%" />
+  <img src="docs/screenshots/image6.png" alt="Manager password login" width="49%" />
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/image7.png" alt="Manager PIN login" width="49%" />
+  <img src="docs/screenshots/image8.png" alt="Manager operations dashboard" width="49%" />
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/image9.png" alt="Manager catalog administration" width="49%" />
+</p>
+
 
 
 ## Project snapshot
@@ -46,14 +76,6 @@ The `desktop-pos/` module is the JavaFX client for customer self-service and man
 - **Manager mode:** sign in with a password, PIN, or manager QR badge; monitor live orders; manage categories and products; review tickets; and change application settings.
 - **Tickets:** the backend generates a service/kitchen ticket and a customer receipt after simulated payment confirmation.
 - **Interface:** English and French-oriented labels, light/dark theme switching, responsive JavaFX layouts, Tunisian café imagery, QR support, and 58 mm ticket previews.
-
-### Desktop screenshots
-
-The following screenshots were captured from the running JavaFX client connected to the local backend:
-
-![POS Tunisie welcome screen](docs/screenshots/desktop-main.png)
-
-![POS Tunisie manager sign-in](docs/screenshots/desktop-manager-login.png)
 
 ### Desktop verification
 
