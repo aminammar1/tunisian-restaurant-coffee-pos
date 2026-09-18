@@ -176,7 +176,7 @@ GitHub Actions builds native installers for the desktop client:
 
 To build them, open the **Build POS installers** workflow in GitHub Actions and choose **Run workflow**. For a permanent download, create a version tag such as `v0.1.0`; the workflow attaches the three installers to the GitHub release. The workflow also keeps each installer available as a downloadable artifact.
 
-The installer packages the JavaFX desktop application and its runtime dependencies. The POS API still needs a reachable Spring Boot backend and MongoDB database. By default, the installed client connects to `http://localhost:8080/api/v1`; set `POS_API_BASE` to point it to a shared backend before launching the client.
+The installer is self-contained for local testing: it includes the JavaFX desktop application, the Spring Boot API, and a local MongoDB server. On launch it starts MongoDB with a persistent data directory at `~/.pos-tunisie/mongodb-data`, starts the API on `127.0.0.1:18080`, and opens the desktop client. Your Atlas URI and repository `.env` are never included in the installer. The first local manager account uses `admin` / `admin123@` and PIN `1234`; change these before shared or production use.
 
 ### Run with Docker
 
