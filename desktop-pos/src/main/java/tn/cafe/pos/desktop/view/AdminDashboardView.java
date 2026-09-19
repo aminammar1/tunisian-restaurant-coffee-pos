@@ -114,7 +114,7 @@ public class AdminDashboardView extends BorderPane implements ViewLifecycle {
 
         load();
         sse.start(msg -> {
-                    feed.getItems().add(0, Ui.safe(msg + "  " + java.time.LocalTime.now(LOCAL_ZONE).withNano(0)));
+                    feed.getItems().add(0, Ui.safe(friendlyFeedEvent(msg) + "  " + java.time.LocalTime.now(LOCAL_ZONE).withNano(0)));
                     load();
                 },
                     liveMsg -> live.setText(Ui.safe(liveMsg)));
@@ -192,18 +192,71 @@ public class AdminDashboardView extends BorderPane implements ViewLifecycle {
             .toList();
         visibleOrders = selectedOrders;
         ordersList.getItems().setAll(selectedOrders.stream()
-            .map(o -> Ui.safe("N°" + o.numero() + " • " + o.statut() + " • " + o.total() + " TND • " + o.tableOuClient()))
+            .map(o -> Ui.safe("N°" + o.numero() + " • " + o.statut() + " • " + Ui.montant(o.total()) + " TND • " + o.tableOuClient()))
             .toList());
-        BigDecimal total = selectedOrders.stream().map(Order::total).filter(java.util.Objects::nonNull)
+        // Revenue counts PAID orders only: an order that is merely created must
+        // never inflate the takings before its (simulated) payment is confirmed.
+        var paid = selectedOrders.stream().filter(o -> "PAYEE".equals(o.statut())).toList();
+        BigDecimal total = paid.stream().map(Order::total).filter(java.util.Objects::nonNull)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
-        Map<String, Integer> products = selectedOrders.stream().flatMap(o -> o.items().stream())
+        Map<String, Integer> quantities = paid.stream().flatMap(o -> o.items().stream())
             .collect(Collectors.groupingBy(i -> i.nomProduit(), Collectors.summingInt(i -> i.quantite())));
-        String best = products.entrySet().stream().max(Comparator.comparingInt(Map.Entry::getValue))
-            .map(e -> e.getKey() + " (" + e.getValue() + ")").orElse(I18n.t("dashboard.none"));
-        revenue.setText(Ui.safe(total + " TND"));
-        orderCount.setText(Ui.safe(String.valueOf(selectedOrders.size())));
+        Map<String, BigDecimal> chiffreParProduit = paid.stream().flatMap(o -> o.items().stream())
+            .collect(Collectors.groupingBy(i -> i.nomProduit(),
+                Collectors.mapping(i -> i.sousTotal() == null ? BigDecimal.ZERO : i.sousTotal(),
+                    Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))));
+        String best = formatTopSellers(quantities, chiffreParProduit, 3, I18n.t("dashboard.none"));
+        revenue.setText(Ui.safe(Ui.montant(total) + " TND"));
+        orderCount.setText(Ui.safe(I18n.t("dashboard.orderCountValue", selectedOrders.size(), paid.size())));
         bestSeller.setText(Ui.safe(best));
         }
+
+    /**
+     * Top sellers, deterministic even with ties: quantity desc, then product
+     * revenue desc, then name asc. Returns "Nom (qté)" joined with " • ".
+     * Pure function (unit-tested, no toolkit needed).
+     */
+    static String formatTopSellers(Map<String, Integer> quantites, Map<String, BigDecimal> chiffres,
+                                   int limit, String noneLabel) {
+        if (quantites == null || quantites.isEmpty() || limit <= 0) return noneLabel;
+        record Entree(String nom, int qte, BigDecimal chiffre) {}
+        var entrees = quantites.entrySet().stream()
+                .map(e -> new Entree(e.getKey(), e.getValue(),
+                        chiffres == null || chiffres.get(e.getKey()) == null
+                                ? BigDecimal.ZERO : chiffres.get(e.getKey())))
+                .sorted(Comparator.comparingInt(Entree::qte).reversed()
+                        .thenComparing(Entree::chiffre, Comparator.reverseOrder())
+                        .thenComparing(e -> e.nom() == null ? "" : e.nom(), String.CASE_INSENSITIVE_ORDER))
+                .limit(limit)
+                .map(e -> (e.nom() == null || e.nom().isBlank() ? "?" : e.nom()) + " (" + e.qte() + ")")
+                .toList();
+        return entrees.isEmpty() ? noneLabel : String.join(" • ", entrees);
+    }
+
+    /**
+     * Friendly live-feed line: the backend now sends "commande-creee" (payment
+     * still pending) vs "commande-payee"; legacy "nouvelle-commande" payloads
+     * are classified by their status word. Pure function (unit-tested).
+     */
+    static String friendlyFeedEvent(String raw) {
+        String event = raw == null ? "" : raw;
+        String data = "";
+        int sep = event.indexOf(" :: ");
+        if (sep >= 0) {
+            data = event.substring(sep + 4);
+            event = event.substring(0, sep);
+        }
+        String label;
+        if (event.contains("commande-payee")
+                || (event.contains("nouvelle-commande") && data.contains("PAYEE"))) {
+            label = I18n.t("dashboard.event.paid");
+        } else if (event.contains("commande-creee") || event.contains("nouvelle-commande")) {
+            label = I18n.t("dashboard.event.created");
+        } else {
+            label = event.isEmpty() ? I18n.t("dashboard.live") : event;
+        }
+        return data.isEmpty() ? label : label + " — " + data;
+    }
 
     private void changerStatut(StatusOption statut) {
         int index = ordersList.getSelectionModel().getSelectedIndex();
