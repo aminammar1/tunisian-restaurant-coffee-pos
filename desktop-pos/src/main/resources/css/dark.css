@@ -30,6 +30,16 @@
 .button { -fx-background-insets: 0; -fx-cursor: hand; }
 .btn:disabled { -fx-opacity: .45; }
 
+/* ---------- quantity steppers (− qty +): square, glyph perfectly centered.
+   Must stay after .btn: same specificity, so this padding wins over .btn's. */
+.stepper { -fx-font-size: 20px; -fx-font-weight: bold; -fx-padding: 0; -fx-alignment: center; -fx-text-alignment: center;
+    -fx-background-color: #262022; -fx-text-fill: #ff8d9a;
+    -fx-border-color: #e5484d; -fx-border-width: 1.5; -fx-border-radius: 10; -fx-background-radius: 10; }
+.stepper:hover { -fx-background-color: rgba(229,72,77,.16); }
+.stepper:pressed { -fx-background-color: rgba(229,72,77,.26); }
+.stepper:focused { -fx-focus-color: #e5484d; -fx-faint-focus-color: rgba(229,72,77,.25); }
+.qty-label { -fx-font-size: 17px; -fx-font-weight: bold; -fx-text-fill: #faf5f6; -fx-alignment: center; }
+
 /* ---------- small chrome ---------- */
 .nav-btn, .icon-btn, .language-menu { -fx-background-color: #262022; -fx-border-color: #4a3e42; -fx-border-radius: 8; -fx-background-radius: 8; -fx-text-fill: #f5efef; -fx-font-size: 13px; -fx-font-weight: bold; -fx-min-height: 42; -fx-padding: 8 12; }
 .nav-btn:hover, .icon-btn:hover, .language-menu:hover { -fx-background-color: rgba(229,72,77,.16); -fx-border-color: #e5484d; }
