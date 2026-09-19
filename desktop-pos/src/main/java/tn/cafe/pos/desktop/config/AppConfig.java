@@ -94,6 +94,29 @@ public final class AppConfig {
     }
 
     public static String sseUrl() { return apiBase() + "/notifications/stream"; }
+
+    /**
+     * Origin of the backend server (scheme + host + port), derived from the API
+     * base without string-splitting on OS-specific separators: pure URI parsing,
+     * identical on Linux / Windows / macOS. Used to absolutize relative image URLs.
+     */
+    public static String serverOrigin() {
+        return serverOrigin(apiBase());
+    }
+
+    static String serverOrigin(String apiBase) {
+        if (apiBase == null || apiBase.isBlank()) return "";
+        String base = apiBase.strip();
+        try {
+            var uri = new java.net.URI(base);
+            var origin = new java.net.URI(uri.getScheme(), null, uri.getHost(), uri.getPort(),
+                    null, null, null);
+            String text = origin.toString();
+            return text == null || text.isBlank() ? stripSlash(base) : text;
+        } catch (Exception bad) {
+            return stripSlash(base);
+        }
+    }
     public static String currency() { return "TND"; }
     public static String printerName() {
         return System.getProperty("pos.printer", System.getenv().getOrDefault("POS_PRINTER", "POS-58mm"));

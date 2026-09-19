@@ -114,15 +114,50 @@ public final class Ui {
         }
     }
 
-    /** True for blank or http(s) URLs only — what product/category images accept. */
+    /** True for blank, http(s) URLs, or backend-relative image paths (/api/v1/images/...). */
     public static boolean isWebImageUrlOk(String url) {
         if (url == null || url.isBlank()) return true;
+        String value = url.strip();
+        if (value.startsWith("/api/v1/images/") || value.startsWith("/images/")) return true;
         try {
-            var uri = new java.net.URI(url.strip());
+            var uri = new java.net.URI(value);
             String scheme = uri.getScheme();
             return scheme != null && (scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https"));
         } catch (Exception bad) {
             return false;
+        }
+    }
+
+    /**
+     * Absolute URL for an image reference: http(s) untouched, backend-relative
+     * paths resolved against the server origin (OS-independent URI join, no file
+     * separators involved). Pure function (unit-tested, no toolkit needed).
+     */
+    public static String resolveImageUrl(String url) {
+        if (url == null) return "";
+        String value = url.strip();
+        if (value.isEmpty()) return "";
+        try {
+            var uri = new java.net.URI(value);
+            if (uri.isAbsolute()) return value;
+        } catch (Exception bad) {
+            return value;
+        }
+        if (!value.startsWith("/")) value = "/" + value;
+        return tn.cafe.pos.desktop.config.AppConfig.serverOrigin() + value;
+    }
+
+    /**
+     * TND amount with exactly 3 decimals (millimes), dot separator, no grouping:
+     * "2.5" -> "2.500". Never throws, null -> "0.000".
+     * Pure function (unit-tested, no toolkit needed).
+     */
+    public static String montant(java.math.BigDecimal value) {
+        var amount = value == null ? java.math.BigDecimal.ZERO : value;
+        try {
+            return amount.setScale(3, java.math.RoundingMode.HALF_UP).toPlainString();
+        } catch (ArithmeticException notFinite) {
+            return "0.000";
         }
     }
 
@@ -139,9 +174,10 @@ public final class Ui {
         stack.setPrefSize(width, height);
         stack.setMaxSize(width, height);
         stack.setMinSize(width, height);
-        if (url == null || url.isBlank()) return stack;
+        String resolved = resolveImageUrl(url);
+        if (resolved.isBlank()) return stack;
         try {
-            var img = new javafx.scene.image.Image(url.strip(), width, height, true, true, true);
+            var img = new javafx.scene.image.Image(resolved, width, height, true, true, true);
             var view = new javafx.scene.image.ImageView(img);
             view.setFitWidth(width);
             view.setFitHeight(height);

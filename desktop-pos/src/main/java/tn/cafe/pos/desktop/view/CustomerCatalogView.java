@@ -44,6 +44,8 @@ public class CustomerCatalogView extends BorderPane {
     private String filterCat = null;
     private String search = "";
     private long imageWaitStarted;
+    private final java.util.Map<String, VBox> qtyBoxes = new java.util.HashMap<>();
+    private final java.util.Map<String, Product> productsById = new java.util.HashMap<>();
     private final StackPane contentLayer = new StackPane();
     private final javafx.scene.control.ProgressIndicator screenLoader = new javafx.scene.control.ProgressIndicator();
 
@@ -143,17 +145,20 @@ public class CustomerCatalogView extends BorderPane {
         refreshCart();
         var voir = Ui.big(I18n.t("catalog.viewCart"), "primary");
         voir.setOnAction(e -> router.go(Router.Route.CART));
-        CartStore.get().lines().addListener((javafx.collections.ListChangeListener<? super CartStore.Line>) c -> refreshCart());
+        CartStore.get().lines().addListener((javafx.collections.ListChangeListener<? super CartStore.Line>) c -> {
+            refreshCart();
+            refreshQuantities();
+        });
         dock.getChildren().addAll(title, cartLines, totalBar, voir);
         return dock;
     }
 
     private void refreshCart() {
         int n = CartStore.get().lines().stream().mapToInt(CartStore.Line::qty).sum();
-        cartLabel.setText(Ui.safe(I18n.t("catalog.cart", n, CartStore.get().total())));
+        cartLabel.setText(Ui.safe(I18n.t("catalog.cart", n, Ui.montant(CartStore.get().total()))));
         cartLines.getItems().clear();
         for (var l : CartStore.get().lines()) {
-            cartLines.getItems().add(Ui.safe(l.qty() + " x " + l.product().nom() + " — " + l.total() + " TND"));
+            cartLines.getItems().add(Ui.safe(l.qty() + " x " + l.product().nom() + " — " + Ui.montant(l.total()) + " TND"));
         }
     }
 
@@ -192,7 +197,7 @@ public class CustomerCatalogView extends BorderPane {
         var button = catBtn(category.nom(), category.id());
         if (category.imageUrl() != null && !category.imageUrl().isBlank()) {
             try {
-                var image = new ImageView(new Image(category.imageUrl(), 28, 28, true, true, true));
+                var image = new ImageView(new Image(Ui.resolveImageUrl(category.imageUrl()), 28, 28, true, true, true));
                 image.setFitWidth(28); image.setFitHeight(28); image.setPreserveRatio(true);
                 button.setGraphic(image);
             } catch (RuntimeException ignored) {
@@ -219,6 +224,8 @@ public class CustomerCatalogView extends BorderPane {
 
     private void render() {
         grid.getChildren().clear();
+        qtyBoxes.clear();
+        productsById.clear();
         all.stream()
             .filter(p -> filterCat == null || filterCat.equals(p.categorieId()))
             .filter(p -> search.isBlank() || (p.nom() != null && p.nom().toLowerCase().contains(search)))
@@ -258,20 +265,65 @@ public class CustomerCatalogView extends BorderPane {
         nom.setMaxWidth(206);
         nom.setMinHeight(20);
         nom.setAlignment(Pos.CENTER);
-        var prix = Ui.amount(String.valueOf(p.prix()) + " TND", "price");
+        var prix = Ui.amount(Ui.montant(p.prix()) + " TND", "price");
         prix.setAlignment(Pos.CENTER);
-        var add = new Button(Ui.safe(I18n.t("catalog.add")));
-        add.getStyleClass().addAll("btn", "primary");
-        add.setMaxWidth(Double.MAX_VALUE);
-        add.setMinHeight(48);
-        add.setMnemonicParsing(false);
-        add.setOnAction(e -> {
-            CartStore.get().add(p);
-            var st = new ScaleTransition(Duration.millis(150), c);
-            st.setFromX(1); st.setToX(1.04); st.setFromY(1); st.setToY(1.04);
-            st.setAutoReverse(true); st.setCycleCount(2); st.play();
-        });
-        c.getChildren().addAll(visual, nom, prix, add);
+        var qtyBox = new VBox();
+        qtyBox.setAlignment(Pos.CENTER);
+        qtyBox.setMaxWidth(Double.MAX_VALUE);
+        if (p.id() != null) {
+            qtyBoxes.put(p.id(), qtyBox);
+            productsById.put(p.id(), p);
+        }
+        refreshQtyBox(p);
+        c.getChildren().addAll(visual, nom, prix, qtyBox);
         return c;
+    }
+
+    /** Quantity already in the basket drives the card: "Add" when 0, stepper otherwise. */
+    private void refreshQtyBox(Product p) {
+        if (p.id() == null) return;
+        var box = qtyBoxes.get(p.id());
+        if (box == null) return;
+        box.getChildren().clear();
+        int q = CartStore.get().qtyOf(p.id());
+        if (q <= 0) {
+            var add = new Button(Ui.safe(I18n.t("catalog.add")));
+            add.getStyleClass().addAll("btn", "primary");
+            add.setMaxWidth(Double.MAX_VALUE);
+            add.setMinHeight(48);
+            add.setMnemonicParsing(false);
+            add.setOnAction(e -> {
+                CartStore.get().add(p);
+                var st = new ScaleTransition(Duration.millis(150), box);
+                st.setFromX(1); st.setToX(1.04); st.setFromY(1); st.setToY(1.04);
+                st.setAutoReverse(true); st.setCycleCount(2); st.play();
+            });
+            box.getChildren().add(add);
+        } else {
+            var minus = stepperButton("−", Ui.safe(I18n.t("catalog.decrease")));
+            minus.setOnAction(e -> CartStore.get().dec(p));
+            var qty = Ui.amount(String.valueOf(q), "qty-label");
+            qty.setAlignment(Pos.CENTER);
+            qty.setMinWidth(44);
+            var plus = stepperButton("+", Ui.safe(I18n.t("catalog.increase")));
+            plus.setOnAction(e -> CartStore.get().add(p));
+            var row = new HBox(8, minus, qty, plus);
+            row.setAlignment(Pos.CENTER);
+            box.getChildren().add(row);
+        }
+    }
+
+    private static Button stepperButton(String text, String tooltip) {
+        var b = new Button(Ui.safe(text));
+        b.getStyleClass().addAll("btn", "stepper");
+        b.setMinSize(48, 48);
+        b.setPrefSize(48, 48);
+        b.setMnemonicParsing(false);
+        b.setTooltip(new javafx.scene.control.Tooltip(tooltip));
+        return b;
+    }
+
+    private void refreshQuantities() {
+        for (var entry : productsById.entrySet()) refreshQtyBox(entry.getValue());
     }
 }

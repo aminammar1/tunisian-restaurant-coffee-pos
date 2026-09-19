@@ -26,20 +26,34 @@ public class CartStore {
     public StringProperty tableOuClientProperty() { return tableOuClient; }
 
     public void add(Product p) {
-        for (int i = 0; i < lines.size(); i++) {
-            Line l = lines.get(i);
-            if (l.product().id().equals(p.id())) { lines.set(i, new Line(p, l.qty() + 1)); return; }
-        }
-        lines.add(new Line(p, 1));
+        setQty(p, qtyOf(p.id()) + 1);
     }
     public void dec(Product p) {
+        setQty(p, qtyOf(p.id()) - 1);
+    }
+    /** Fixed quantity from the customer stepper: 0 removes the line. */
+    public void setQty(Product p, int qty) {
+        if (p == null || p.id() == null) return;
         for (int i = 0; i < lines.size(); i++) {
             Line l = lines.get(i);
             if (l.product().id().equals(p.id())) {
-                if (l.qty() <= 1) lines.remove(i); else lines.set(i, new Line(p, l.qty() - 1));
+                if (qty <= 0) lines.remove(i);
+                else lines.set(i, new Line(p, qty));
                 return;
             }
         }
+        if (qty > 0) lines.add(new Line(p, qty));
+    }
+    public void remove(Product p) {
+        if (p != null) setQty(p, 0);
+    }
+    /** Current quantity of a product in the basket, 0 when absent. */
+    public int qtyOf(String productId) {
+        if (productId == null) return 0;
+        for (Line l : lines) {
+            if (l.product().id() != null && l.product().id().equals(productId)) return l.qty();
+        }
+        return 0;
     }
     public void clear() { lines.clear(); }
     public boolean isEmpty() { return lines.isEmpty(); }

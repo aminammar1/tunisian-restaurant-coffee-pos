@@ -7,8 +7,10 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -22,7 +24,7 @@ import tn.cafe.pos.desktop.viewmodel.CartStore;
 /** S2 — Panier + création commande POST /orders {items:[{produitId,quantite}], tableOuClient}. */
 public class CartView extends BorderPane {
     private final Router router;
-    private final ListView<String> list = new ListView<>();
+    private final ListView<CartStore.Line> list = new ListView<>();
     private final Label total = new Label();
     private final TextField table = new TextField();
     private final Label status = new Label();
@@ -35,7 +37,10 @@ public class CartView extends BorderPane {
         table.setPromptText(Ui.safe(I18n.t("cart.table")));
         table.getStyleClass().add("search");
         table.setMaxWidth(Double.MAX_VALUE);
+        list.setCellFactory(lv -> new LineCell());
         refresh();
+        CartStore.get().lines().addListener(
+                (javafx.collections.ListChangeListener<? super CartStore.Line>) c -> refresh());
 
         var itemsTitle = Ui.section(I18n.t("cart.items"));
         status.setWrapText(false);
@@ -66,10 +71,57 @@ public class CartView extends BorderPane {
     }
 
     private void refresh() {
-        list.getItems().clear();
-        for (var l : CartStore.get().lines())
-            list.getItems().add(Ui.safe(l.qty() + " x " + l.product().nom() + " — " + l.total() + " TND"));
-        total.setText(Ui.safe(I18n.t("cart.total", CartStore.get().total())));
+        list.getItems().setAll(CartStore.get().lines());
+        total.setText(Ui.safe(I18n.t("cart.total", Ui.montant(CartStore.get().total()))));
+    }
+
+    /** Basket row: name, [-] qty [+], line total, remove. Touch-sized, single-line. */
+    private static final class LineCell extends ListCell<CartStore.Line> {
+        private final Label name = new Label();
+        private final Button minus = new Button("−");
+        private final Label qty = new Label();
+        private final Button plus = new Button("+");
+        private final Label amount = new Label();
+        private final Button remove = new Button("×");
+        private final HBox row = new HBox(8, name, minus, qty, plus, amount, remove);
+
+        LineCell() {
+            row.setAlignment(Pos.CENTER_LEFT);
+            name.setWrapText(false);
+            name.setTextOverrun(javafx.scene.control.OverrunStyle.ELLIPSIS);
+            name.setMaxWidth(Double.MAX_VALUE);
+            HBox.setHgrow(name, Priority.ALWAYS);
+            for (var b : new Button[]{minus, plus, remove}) {
+                b.getStyleClass().addAll("btn", "stepper");
+                b.setMinSize(44, 44);
+                b.setPrefSize(44, 44);
+                b.setMnemonicParsing(false);
+            }
+            minus.setTooltip(new Tooltip(Ui.safe(I18n.t("catalog.decrease"))));
+            plus.setTooltip(new Tooltip(Ui.safe(I18n.t("catalog.increase"))));
+            remove.setTooltip(new Tooltip(Ui.safe(I18n.t("cart.remove"))));
+            qty.setMinWidth(36);
+            qty.setAlignment(Pos.CENTER);
+            amount.setMinWidth(90);
+            amount.setAlignment(Pos.CENTER_RIGHT);
+            Ui.ltr(amount);
+        }
+
+        @Override
+        protected void updateItem(CartStore.Line line, boolean empty) {
+            super.updateItem(line, empty);
+            if (empty || line == null) {
+                setGraphic(null);
+                return;
+            }
+            name.setText(Ui.safe(line.product().nom()));
+            qty.setText(String.valueOf(line.qty()));
+            amount.setText(Ui.safe(Ui.montant(line.total()) + " TND"));
+            minus.setOnAction(e -> CartStore.get().dec(line.product()));
+            plus.setOnAction(e -> CartStore.get().add(line.product()));
+            remove.setOnAction(e -> CartStore.get().remove(line.product()));
+            setGraphic(row);
+        }
     }
 
     private Button orderBtn() {
