@@ -41,7 +41,7 @@ public class PaymentService {
         Order payee = commandes.save(o);
         payee.definirPaiementTicket(req.type());
         List<Ticket> deux = tickets.genererDeuxTickets(payee);
-        hub.diffuser(payee);
+        hub.diffuserPaiement(payee);
         return new PaiementResultat(p, payee, deux);
     }
 

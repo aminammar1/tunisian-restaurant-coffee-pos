@@ -26,10 +26,31 @@ public class OrderSseHub {
     }
 
     public void diffuser(Order order) {
-        String payload = "Nouvelle commande " + (order.getNumero() != null ? order.getNumero() : order.getId())
+        if (order != null && order.getStatut() == tn.cafe.pos.domain.model.OrderStatus.PAYEE) {
+            diffuserPaiement(order);
+        } else {
+            diffuserCreation(order);
+        }
+    }
+
+    /** Commande reçue, paiement encore en attente : ne parle jamais de paiement confirmé. */
+    public void diffuserCreation(Order order) {
+        String payload = "Commande " + (order.getNumero() != null ? order.getNumero() : order.getId())
+                + " reçue - Total " + order.getTotal() + " - " + order.getStatut()
+                + " (paiement en attente)";
+        envoyer("commande-creee", payload);
+    }
+
+    /** Paiement simulé confirmé : seul cet événement annonce une commande payée. */
+    public void diffuserPaiement(Order order) {
+        String payload = "Paiement confirmé " + (order.getNumero() != null ? order.getNumero() : order.getId())
                 + " - Total " + order.getTotal() + " - " + order.getStatut();
+        envoyer("commande-payee", payload);
+    }
+
+    private void envoyer(String event, String payload) {
         for (SseEmitter e : clients) {
-            try { e.send(SseEmitter.event().name("nouvelle-commande").data(payload)); }
+            try { e.send(SseEmitter.event().name(event).data(payload)); }
             catch (Exception ex) { clients.remove(e); }
         }
     }

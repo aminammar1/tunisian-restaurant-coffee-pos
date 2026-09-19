@@ -50,7 +50,7 @@ class PaymentServiceTest {
         assertTrue(r.paiement().estReussi());
         assertEquals(OrderStatus.PAYEE, r.commande().getStatut());
         assertEquals(2, r.tickets().size());
-        verify(hub).diffuser(any());
+        verify(hub).diffuserPaiement(any());
     }
 
     @Test

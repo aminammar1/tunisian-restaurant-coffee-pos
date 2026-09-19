@@ -25,6 +25,7 @@ public class OrderService {
     public Order creer(CreateOrderRequest req) {
         List<OrderItem> items = new ArrayList<>();
         for (var li : req.items()) {
+            if (li.quantite() < 1) throw new BusinessException("Quantité >= 1 requise");
             Product p = produits.findById(li.produitId())
                     .orElseThrow(() -> new ResourceNotFoundException("Produit introuvable : " + li.produitId()));
             if (!p.isDisponible()) throw new BusinessException("Produit indisponible : " + p.getNom());
@@ -33,7 +34,7 @@ public class OrderService {
         Order o = Order.creer(items, req.tableOuClient());
         o.setNumero(genererNumero());
         Order sauvee = commandes.save(o);
-        hub.diffuser(sauvee);
+        hub.diffuserCreation(sauvee);
         return sauvee;
     }
 

@@ -43,7 +43,7 @@ class OrderServiceTest {
         Order o = service.creer(new CreateOrderRequest(List.of(new OrderItemRequest("p1", 2)), "T3"));
         assertEquals(new BigDecimal("5.000"), o.getTotal());
         assertEquals("CMD-000001", o.getNumero());
-        verify(hub).diffuser(any());
+        verify(hub).diffuserCreation(any());
     }
 
     @Test
@@ -52,6 +52,14 @@ class OrderServiceTest {
         when(produits.findById("p1")).thenReturn(Optional.of(p));
         assertThrows(BusinessException.class, () ->
                 service.creer(new CreateOrderRequest(List.of(new OrderItemRequest("p1", 1)), null)));
+    }
+
+    @Test
+    void creer_quantite_invalide_refusee_en_400() {
+        assertThrows(BusinessException.class, () ->
+                service.creer(new CreateOrderRequest(List.of(new OrderItemRequest("p1", 0)), "T3")));
+        verify(commandes, never()).save(any());
+        verify(hub, never()).diffuserCreation(any());
     }
 
     @Test
