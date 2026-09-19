@@ -96,6 +96,45 @@ public class ApiClient {
         check(res);
     }
 
+    /**
+     * Uploads a local image file (chosen with the OS-native file dialog) as
+     * multipart/form-data to POST /images. OS-safe: {@code Path} only, no path
+     * separators are ever concatenated by hand. Returns the absolute image URL.
+     */
+    public String uploadImage(java.nio.file.Path file) throws IOException, InterruptedException, ApiException {
+        if (file == null || !java.nio.file.Files.isRegularFile(file)) {
+            throw new IOException("Image file not found");
+        }
+        String boundary = "pos-img-" + System.currentTimeMillis();
+        String safeName = file.getFileName().toString().replace('"', '_').replace('\n', '_');
+        String mime;
+        try {
+            mime = java.nio.file.Files.probeContentType(file);
+        } catch (IOException ignored) {
+            mime = null;
+        }
+        if (mime == null || mime.isBlank()) mime = "application/octet-stream";
+        byte[] head = ("--" + boundary + "\r\nContent-Disposition: form-data; name=\"fichier\"; filename=\""
+                + safeName + "\"\r\nContent-Type: " + mime + "\r\n\r\n").getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] tail = ("\r\n--" + boundary + "--\r\n").getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        var body = HttpRequest.BodyPublishers.ofByteArrays(
+                java.util.List.of(head, java.nio.file.Files.readAllBytes(file), tail));
+        var req = HttpRequest.newBuilder(URI.create(AppConfig.apiBase() + "/images"))
+                .timeout(Duration.ofSeconds(30))
+                .header("Accept", "application/json")
+                .header("Content-Type", "multipart/form-data; boundary=" + boundary);
+        String token = AuthSession.get().token();
+        if (token != null && !token.isBlank()) req.header("Authorization", "Bearer " + token);
+        var res = http.send(req.POST(body).build(), HttpResponse.BodyHandlers.ofString());
+        check(res);
+        java.util.Map<String, Object> json = mapper.readValue(res.body(), new TypeReference<>() { });
+        Object url = json.get("url");
+        String relative = url == null ? "" : url.toString().strip();
+        if (relative.startsWith("http://") || relative.startsWith("https://")) return relative;
+        if (!relative.startsWith("/")) relative = "/" + relative;
+        return AppConfig.serverOrigin() + relative;
+    }
+
     /** Raw GET for SSE / plain text. */
     public HttpClient http() { return http; }
 

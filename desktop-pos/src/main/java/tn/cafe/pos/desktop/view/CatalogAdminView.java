@@ -13,6 +13,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 import tn.cafe.pos.desktop.core.api.ApiClient;
 import tn.cafe.pos.desktop.core.i18n.I18n;
 import tn.cafe.pos.desktop.core.router.Router;
@@ -50,6 +51,15 @@ public class CatalogAdminView extends BorderPane {
         categoryPicker.setMaxWidth(Double.MAX_VALUE);
         categoryPicker.setMinHeight(48);
 
+        var browseProductImage = new Button(Ui.safe(I18n.t("catalogAdmin.browse")));
+        browseProductImage.getStyleClass().addAll("btn", "accent");
+        browseProductImage.setMinHeight(48);
+        browseProductImage.setMnemonicParsing(false);
+        browseProductImage.setOnAction(e -> browseAndUpload(imageUrl));
+        var productImageRow = new HBox(8, imageUrl, browseProductImage);
+        productImageRow.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(imageUrl, Priority.ALWAYS);
+
         imagePreview.setAlignment(Pos.CENTER_LEFT);
         imagePreview.getChildren().add(Ui.webImage("", 190, 110, I18n.t("catalog.photo")));
         imageUrl.textProperty().addListener((o, a, b) ->
@@ -64,6 +74,14 @@ public class CatalogAdminView extends BorderPane {
             f.getStyleClass().add("search");
             f.setMaxWidth(Double.MAX_VALUE);
         }
+        var browseCategoryImage = new Button(Ui.safe(I18n.t("catalogAdmin.browse")));
+        browseCategoryImage.getStyleClass().addAll("btn", "accent");
+        browseCategoryImage.setMinHeight(48);
+        browseCategoryImage.setMnemonicParsing(false);
+        browseCategoryImage.setOnAction(e -> browseAndUpload(catImageUrl));
+        var categoryImageRow = new HBox(8, catImageUrl, browseCategoryImage);
+        categoryImageRow.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(catImageUrl, Priority.ALWAYS);
         var addCategory = Ui.big(I18n.t("catalogAdmin.createCategory"), "accent");
         addCategory.setOnAction(e -> creerCategorie(catName.getText(), catDescription.getText(), catImageUrl.getText()));
         var toggle = new Button(Ui.safe(I18n.t("catalogAdmin.availability"))); toggle.getStyleClass().addAll("btn", "accent");
@@ -84,8 +102,8 @@ public class CatalogAdminView extends BorderPane {
         status.setMaxWidth(Double.MAX_VALUE);
         status.getStyleClass().add("status");
         var form = new VBox(8, Ui.section(I18n.t("catalogAdmin.newProduct")), nom, prix, categoryPicker,
-            description, imageUrl, imagePreview, add,
-            Ui.section(I18n.t("catalogAdmin.newCategory")), catName, catDescription, catImageUrl, addCategory,
+            description, productImageRow, imagePreview, add,
+            Ui.section(I18n.t("catalogAdmin.newCategory")), catName, catDescription, categoryImageRow, addCategory,
             new HBox(10, toggle, del), status);
         form.setPadding(new Insets(4, 12, 4, 4));
         form.setMinWidth(0);
@@ -165,6 +183,63 @@ public class CatalogAdminView extends BorderPane {
         int index = prods.getSelectionModel().getSelectedIndex();
         if (index < 0 || index >= loadedProducts.size()) return null;
         return loadedProducts.get(index).id();
+    }
+
+    /**
+     * Imports a picture from the manager's own machine: the OS-native file
+     * dialog picks the file (Linux / Windows / macOS), then it is uploaded to
+     * POST /images and the field receives the served URL with a live preview.
+     * Only {@code Path} is used — no path separator is ever concatenated by hand.
+     */
+    private void browseAndUpload(TextField target) {
+        var chooser = new FileChooser();
+        chooser.setTitle(Ui.safe(I18n.t("catalogAdmin.chooseImage")));
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(
+                "Images", "*.png", "*.jpg", "*.jpeg", "*.webp", "*.gif"));
+        String home = System.getProperty("user.home", "");
+        if (!home.isBlank()) {
+            try {
+                var homeDir = java.nio.file.Paths.get(home);
+                if (java.nio.file.Files.isDirectory(homeDir)) chooser.setInitialDirectory(homeDir.toFile());
+            } catch (Exception ignored) {
+                // fall back to the OS default directory
+            }
+        }
+        var window = getScene() == null ? null : getScene().getWindow();
+        var file = chooser.showOpenDialog(window);
+        if (file == null) return;
+        String nom = file.getName() == null ? "" : file.getName().toLowerCase(java.util.Locale.ROOT);
+        boolean image = nom.endsWith(".png") || nom.endsWith(".jpg") || nom.endsWith(".jpeg")
+                || nom.endsWith(".webp") || nom.endsWith(".gif");
+        if (!image) {
+            String bad = Ui.safe(I18n.t("catalogAdmin.badImage"));
+            status.setText(bad);
+            Ui.toastError(this, bad);
+            return;
+        }
+        status.setText(Ui.safe(I18n.t("catalogAdmin.uploading")));
+        var t = new Task<String>() {
+            @Override protected String call() throws Exception {
+                return ApiClient.get().uploadImage(file.toPath());
+            }
+            @Override protected void succeeded() {
+                Platform.runLater(() -> {
+                    target.setText(getValue());
+                    status.setText(Ui.safe(I18n.t("catalogAdmin.uploaded")));
+                    Ui.toastSuccess(CatalogAdminView.this, I18n.t("catalogAdmin.uploaded"));
+                });
+            }
+            @Override protected void failed() {
+                Platform.runLater(() -> {
+                    String err = Ui.safe(I18n.t("catalogAdmin.uploadFailed", Ui.essentialError(getException())));
+                    status.setText(err);
+                    Ui.toastError(CatalogAdminView.this, err);
+                });
+            }
+        };
+        var thread = new Thread(t, "image-upload");
+        thread.setDaemon(true);
+        thread.start();
     }
 
     private void creerProduit(TextField nom, TextField prix, TextField description, TextField imageUrl) {
