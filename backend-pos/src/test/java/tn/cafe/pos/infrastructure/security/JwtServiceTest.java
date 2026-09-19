@@ -9,7 +9,7 @@ class JwtServiceTest {
     private JwtService service() {
         return new JwtService(new AppProperties(
                 new AppProperties.Jwt("jwt-test-secret-0123456789-abcdef-987654", 3600000),
-                null, null, null, null));
+                null, null, null, null, null));
     }
 
     @Test

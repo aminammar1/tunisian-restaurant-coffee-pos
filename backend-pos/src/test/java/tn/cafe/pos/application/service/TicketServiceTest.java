@@ -22,7 +22,7 @@ class TicketServiceTest {
     private TicketRenderer renderer() {
         return new TicketRenderer(new AppProperties(null, null,
                 new AppProperties.Printer(true, "POS-58mm"),
-                new AppProperties.Ticket(58, "TND", "fr-TN", "Merci !"), null));
+                new AppProperties.Ticket(58, "TND", "fr-TN", "Merci !"), null, null));
     }
 
     @Test

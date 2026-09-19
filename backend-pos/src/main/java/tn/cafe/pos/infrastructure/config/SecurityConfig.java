@@ -33,7 +33,8 @@ public class SecurityConfig {
                     "/api/v1/notifications/stream",
                         "/swagger-ui.html", "/swagger-ui/**", "/api-docs/**",
                         "/v3/api-docs/**", "/actuator/health").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/categories/**", "/api/v1/products/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/categories/**", "/api/v1/products/**",
+                        "/api/v1/images/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/orders", "/api/v1/payments/**").permitAll()
                 .anyRequest().authenticated())
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)

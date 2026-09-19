@@ -31,7 +31,7 @@ class AuthServiceTest {
     void setUp() {
         jwt = new JwtService(new AppProperties(
                 new AppProperties.Jwt("test-secret-min-32-chars-0123456789abcdef", 3600000),
-                null, null, null, null));
+                null, null, null, null, null));
         service = new AuthService(users, encoder, jwt);
     }
 
